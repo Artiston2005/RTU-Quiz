@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Study Session — RTUKaGyan</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="dns-prefetch" href="https://bcijwutbbhxhhypicmvc.supabase.co">
+    <link href="assets/style.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+</head>
+
+<body class="bg-rtu-bg text-gray-100 font-sans min-h-screen relative overflow-x-hidden">
+
+    <div aria-hidden="true" class="pointer-events-none fixed inset-0 -z-10">
+        <div class="absolute -top-40 -right-28 h-80 w-80 rounded-full bg-rtu-accent-soft blur-3xl opacity-80"></div>
+        <div class="absolute -bottom-40 -left-24 h-80 w-80 rounded-full bg-purple-700/30 blur-3xl opacity-70"></div>
+        <div
+            class="absolute inset-x-0 top-32 mx-auto h-px w-[92%] max-w-5xl bg-gradient-to-r from-transparent via-slate-700/70 to-transparent">
+        </div>
+    </div>
+
+    <header
+        class="bg-slate-900/70 border-b border-slate-800 backdrop-blur-xl px-4 md:px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <img src="assets/favicon.webp" alt="Logo" class="w-9 h-9 object-contain drop-shadow-lg cursor-pointer"
+                onerror="this.style.display='none'"
+                onclick="sessionStorage.setItem('fromPage', 'study'); window.location.href = 'index.html?from=study';">
+            <div class="cursor-pointer"
+                onclick="sessionStorage.setItem('fromPage', 'study'); window.location.href = 'index.html?from=study';">
+                <h1
+                    class="text-xl md:text-2xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-sky-400 via-rtu-accent to-fuchsia-400 pb-0.5">
+                    RTUKaGyan
+                </h1>
+                <p class="text-[10px] text-slate-400 uppercase tracking-[0.22em] font-semibold">
+                    Guided Study Session
+                </p>
+            </div>
+        </div>
+        <a href="#"
+            onclick="event.preventDefault(); sessionStorage.setItem('fromPage', 'study'); window.location.href = 'index.html?from=study';"
+            class="bg-slate-800/80 hover:bg-slate-700 border border-slate-700/80 text-slate-100 px-4 py-2 rounded-full font-semibold text-xs md:text-sm transition-all flex items-center gap-2 shadow-sm hover:-translate-y-0.5">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18">
+                </path>
+            </svg>
+            Back to Portal
+        </a>
+    </header>
+
+    <div id="loadingState" class="flex-1 flex flex-col items-center justify-center p-16 text-center space-y-3">
+        <div class="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+        <p id="loadingText" class="text-slate-300 text-sm font-medium">Preparing your AI study plan…</p>
+        <p class="text-[11px] text-slate-500 max-w-sm">
+            We contact the backend, pull PYQs & topic data, then ask the AI to build a Pomodoro roadmap and quiz set.
+            This first-time generation can take <span class="font-semibold text-slate-300">10–25 seconds</span>.
+        </p>
+        <button onclick="sessionStorage.setItem('fromPage', 'study'); window.location.href = 'index.html?from=study';"
+            class="mt-4 bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white px-4 py-2 rounded-full font-medium text-sm transition">
+            Cancel & Go Back
+        </button>
+    </div>
+
+    <div id="mainContent" class="hidden max-w-4xl mx-auto px-4 md:px-6 py-6 space-y-8 md:space-y-9 fade-in">
+
+        <div class="text-center">
+            <h2 id="topicTitle" class="text-2xl md:text-3xl font-extrabold text-slate-50 mb-1"></h2>
+            <p id="subjectLabel" class="text-slate-400 text-sm"></p>
+        </div>
+
+        <div id="materialsSection"
+            class="bg-rtu-card p-6 md:p-7 rounded-3xl border border-rtu-border shadow-rtu-elevated card-lift stagger-1">
+            <div class="flex items-start justify-between gap-4 mb-3">
+                <h3 class="text-lg md:text-xl font-semibold text-slate-50 flex items-center">
+                    <svg class="w-5 h-5 mr-2 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4">
+                        </path>
+                    </svg>
+                    Study Materials
+                </h3>
+                <p class="hidden md:block text-[11px] text-slate-400 max-w-xs text-right">
+                    Jump into high-signal resources curated around this topic.
+                </p>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4" id="materialsGrid">
+            </div>
+        </div>
+
+        <div id="pyqSection"
+            class="hidden bg-rtu-card p-6 md:p-7 rounded-3xl border border-rtu-border shadow-rtu-elevated card-lift stagger-2">
+            <h3 class="text-lg md:text-xl font-semibold text-slate-50 mb-4 flex items-center">
+                <svg class="w-5 h-5 mr-2 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477-4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253">
+                    </path>
+                </svg>
+                Previous Year Papers
+            </h3>
+            <div id="pyqPills" class="flex flex-wrap gap-3"></div>
+        </div>
+
+        <div class="bg-rtu-card p-6 md:p-7 rounded-3xl border border-rtu-border shadow-rtu-elevated">
+            <h3 class="text-xl md:text-2xl font-semibold text-emerald-300 mb-4 flex items-center">
+                <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                AI Study Roadmap (Pomodoro)
+            </h3>
+            <div id="pomodoroList" class="space-y-4"></div>
+        </div>
+
+        <div class="bg-rtu-card p-6 md:p-7 rounded-3xl border border-rtu-border shadow-rtu-elevated">
+            <h3 class="text-xl md:text-2xl font-semibold text-purple-300 mb-4 flex items-center">
+                <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                Knowledge Check
+                <span class="ml-2 text-xs text-gray-500 font-normal">(8 random questions)</span>
+            </h3>
+            <div id="quizList" class="space-y-6"></div>
+        </div>
+    </div>
+
+    <footer class="max-w-4xl mx-auto mt-auto pt-10 pb-7 w-full border-t border-slate-800/60">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
+            <div
+                class="bg-slate-900/60 border border-slate-800/80 rounded-2xl md:rounded-3xl p-6 text-center flex flex-col justify-center">
+                <p class="text-[11px] text-slate-500 uppercase tracking-[0.24em] mb-3 font-semibold">Developed by</p>
+                <img src="assets/ashwin_profile.webp" alt="Ashwin Yadav"
+                    class="w-14 h-14 md:w-16 md:h-16 rounded-full mx-auto mb-3 object-cover border border-slate-600 shadow-lg shadow-slate-900/80"
+                    loading="lazy" onerror="this.style.display='none'">
+                <h3 class="text-base md:text-lg font-semibold text-slate-50 mb-1">Ashwin Yadav</h3>
+                <div class="flex items-center justify-center gap-4 mt-2">
+                    <a href="https://github.com/Artiston2005" target="_blank" rel="noopener noreferrer"
+                        class="inline-flex items-center justify-center rounded-full h-9 w-9 border border-slate-700/70 bg-slate-900/80 text-slate-300 hover:text-white hover:border-rtu-accent hover:bg-rtu-accent/10 transition"
+                        title="GitHub">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                            <path
+                                d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+                        </svg>
+                    </a>
+                    <a href="https://www.linkedin.com/in/ashwin-yadav-1704a1248" target="_blank"
+                        rel="noopener noreferrer"
+                        class="inline-flex items-center justify-center rounded-full h-9 w-9 border border-slate-700/70 bg-slate-900/80 text-slate-300 hover:text-sky-400 hover:border-sky-500 hover:bg-slate-900/60 transition"
+                        title="LinkedIn">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                            <path
+                                d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
+                        </svg>
+                    </a>
+                    <a href="mailto:ashwinyadav2408@gmail.com"
+                        class="inline-flex items-center justify-center rounded-full h-9 w-9 border border-slate-700/70 bg-slate-900/80 text-slate-300 hover:text-rose-300 hover:border-rose-500 hover:bg-rose-500/10 transition"
+                        title="Email">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z">
+                            </path>
+                        </svg>
+                    </a>
+                </div>
+            </div>
+
+            <div
+                class="bg-slate-900/60 border border-slate-800/80 rounded-2xl md:rounded-3xl p-6 text-center flex flex-col justify-center items-center group cursor-pointer">
+                <p class="text-[11px] text-slate-500 uppercase tracking-[0.24em] mb-3 font-semibold">Powered By</p>
+                <a href="https://rtupedia.vercel.app/" target="_blank" rel="noopener noreferrer"
+                    class="bg-slate-950/80 border border-slate-800 p-4 rounded-2xl shadow-inner group-hover:border-rtu-accent/60 group-hover:bg-slate-900/80 transition duration-300 w-full max-w-[200px] flex flex-col items-center justify-center gap-2">
+                    <img src="assets/rtupedia.png" alt="RTUpedia Logo" class="w-12 h-12 object-contain" loading="lazy"
+                        onerror="this.style.display='none'">
+                    <h2
+                        class="text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-sky-400 via-rtu-accent to-fuchsia-400">
+                        RTUpedia
+                    </h2>
+                </a>
+                <p class="text-xs text-slate-400 mt-4 max-w-[250px] mx-auto leading-relaxed">Student-powered platform
+                    built to bring together notes, PYQs, study tools, and resources for every RTU student</p>
+            </div>
+        </div>
+        <p class="text-[11px] text-slate-500 mt-6 text-center">© 2026 <span
+                class="font-semibold text-white">RTUKagyan</span> By Ashwin Yadav. All rights reserved.</p>
+    </footer>
+
+
+
+    <div id="focusOverlay"
+        class="fixed inset-0 bg-gray-900 z-50 hidden flex-col items-center justify-center p-4 overflow-y-auto">
+        <div class="max-w-md w-full text-center">
+            <h2 id="focusTitle" class="text-2xl font-bold text-blue-300 mb-6"></h2>
+            <div id="timerControls">
+                <p id="timerDisplay" class="text-7xl font-black text-white tracking-wider mb-8 font-mono">25:00</p>
+                <div id="focusMaterials"
+                    class="text-left bg-gray-800 border border-gray-700 rounded-xl p-4 mb-6 space-y-3">
+                    <p class="text-xs font-bold text-gray-500 uppercase tracking-widest">Quick Access</p>
+                    <div id="focusMaterialLinks" class="flex flex-wrap gap-2"></div>
+                    <div id="focusPyqLinks" class="flex flex-wrap gap-2"></div>
+                </div>
+                <button onclick="abandonSession()"
+                    class="bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white border border-red-600/50 font-semibold py-3 px-8 rounded-lg transition-all w-full">
+                    Abandon Session
+                </button>
+            </div>
+            <div id="sessionCompleteMsg" class="hidden">
+                <p class="text-green-400 font-bold text-2xl mb-6 flex items-center justify-center gap-2">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    Session Completed!
+                </p>
+                <button onclick="closeFocusOverlay()"
+                    class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition-all w-full">
+                    Return to Roadmap
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '';
+        const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+        const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+        let rateLimitConfig = {
+            auth_gemini_limit: 15,
+            auth_groq_limit: 20,
+            guest_gemini_limit: 3,
+            guest_groq_limit: 5,
+            auth_total_limit: 35,
+            guest_upgrade_message: "You've exhausted your free guest generations. Sign in to get 35 daily credits!",
+            auth_limit_message: "Daily Limits Reached. Come back tomorrow or add your own API Key in Settings!"
+        };
+
+        async function loadRateLimitConfig() {
+            try {
+                const res = await fetch(`${API_BASE}/rate-limit-settings`);
+                if (!res.ok) return rateLimitConfig;
+                const data = await res.json();
+                rateLimitConfig = { ...rateLimitConfig, ...data };
+            } catch (err) {
+                console.warn('Failed to load rate limit config', err);
+            }
+            return rateLimitConfig;
+        }
+
+        // Set sessionStorage when navigating away (for back button, etc.)
+        window.addEventListener('beforeunload', () => {
+            sessionStorage.setItem('fromPage', 'study');
+        });
+
+        // --- Custom Modal / Toast Helper (replaces SweetAlert) ---
+        function showToast(message, type = 'info', duration = 2500) {
+            const colors = {
+                info: 'bg-rtu-accent text-white',
+                success: 'bg-emerald-500 text-white',
+                warning: 'bg-amber-400 text-slate-900',
+                error: 'bg-rose-500 text-white'
+            };
+            const wrapper = document.createElement('div');
+            wrapper.className = `fixed top-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg shadow-black/40 border border-white/10 bg-opacity-90 ${colors[type] || colors.info}`;
+            wrapper.style.minWidth = '240px';
+            wrapper.style.backdropFilter = 'blur(12px)';
+            wrapper.style.zIndex = '110';
+            wrapper.innerHTML = `<span class="font-semibold">${message}</span>`;
+            document.body.appendChild(wrapper);
+            setTimeout(() => {
+                wrapper.classList.add('opacity-0');
+                setTimeout(() => wrapper.remove(), 200);
+            }, duration);
+        }
+
+        function showDialog({ title = '', text = '', icon = 'info', showCancelButton = false, confirmButtonText = 'OK', cancelButtonText = 'Cancel', confirmButtonColor = '#3b82f6' }) {
+            return new Promise((resolve) => {
+                let modal = document.getElementById('appModal');
+                if (!modal) {
+                    modal = document.createElement('div');
+                    modal.id = 'appModal';
+                    modal.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4 py-6';
+                    modal.style.zIndex = '100';
+                    modal.innerHTML = `
+                        <div class="w-full max-w-md bg-slate-900/80 border border-slate-800/60 rounded-3xl shadow-2xl p-6 text-left" style="backdrop-filter: blur(16px);">
+                            <div class="flex items-start gap-4 mb-4">
+                                <div id="appModalIcon" class="w-10 h-10 rounded-full flex items-center justify-center bg-slate-800 text-white text-xl"></div>
+                                <div class="flex-1">
+                                    <h2 id="appModalTitle" class="text-lg font-bold text-white mb-1"></h2>
+                                    <p id="appModalText" class="text-sm text-slate-200"></p>
+                                </div>
+                            </div>
+                            <div class="mt-6 flex justify-end gap-3">
+                                <button id="appModalCancel" class="px-4 py-2 rounded-full bg-slate-800 text-slate-200 hover:bg-slate-700 transition hidden">Cancel</button>
+                                <button id="appModalConfirm" class="px-4 py-2 rounded-full text-white" style="background:${confirmButtonColor};">OK</button>
+                            </div>
+                        </div>
+                    `;
+                    document.body.appendChild(modal);
+                }
+
+                const titleEl = modal.querySelector('#appModalTitle');
+                const textEl = modal.querySelector('#appModalText');
+                const iconEl = modal.querySelector('#appModalIcon');
+                const confirmBtn = modal.querySelector('#appModalConfirm');
+                const cancelBtn = modal.querySelector('#appModalCancel');
+
+                titleEl.textContent = title;
+                textEl.textContent = text;
+                iconEl.textContent = icon === 'warning' ? '⚠️' : icon === 'error' ? '❌' : icon === 'success' ? '✅' : 'ℹ️';
+                confirmBtn.textContent = confirmButtonText;
+                confirmBtn.style.background = confirmButtonColor;
+                cancelBtn.textContent = cancelButtonText;
+
+                if (showCancelButton) {
+                    cancelBtn.classList.remove('hidden');
+                } else {
+                    cancelBtn.classList.add('hidden');
+                }
+
+                const cleanup = () => {
+                    modal.classList.add('hidden');
+                    confirmBtn.onclick = null;
+                    cancelBtn.onclick = null;
+                };
+
+                modal.classList.remove('hidden');
+
+                confirmBtn.onclick = () => {
+                    cleanup();
+                    resolve({ isConfirmed: true });
+                };
+                cancelBtn.onclick = () => {
+                    cleanup();
+                    resolve({ isConfirmed: false });
+                };
+            });
+        }
+
+        // XSS sanitization helper
+        function sanitize(str) {
+            const d = document.createElement('div');
+            d.textContent = str;
+            return d.innerHTML;
+        }
+
+        // RENAMED
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        const params = new URLSearchParams(window.location.search);
+        const CONFIG = {
+            topicId: params.get('topicId'),
+            topicName: params.get('topicName') || 'Unknown Topic',
+            subjectName: params.get('subjectName') || 'Unknown Subject',
+            subjectId: params.get('subjectId') || '',
+        };
+
+        if (window.pdfjsLib) {
+            window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+        }
+
+
+
+        document.getElementById('topicTitle').innerText = sanitize(CONFIG.topicName);
+        document.getElementById('subjectLabel').innerText = sanitize(CONFIG.subjectName);
+
+        // --- Shuffle ---
+        function shuffleArray(arr) {
+            const a = [...arr];
+            for (let i = a.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [a[i], a[j]] = [a[j], a[i]];
+            }
+            return a;
+        }
+
+
+
+        window.openNotesViewer = function (url, label = 'Study Notes', topicId = CONFIG.topicId, topicName = CONFIG.topicName, subjectName = CONFIG.subjectName) {
+            const tId = topicId || CONFIG.topicId || 'notes-viewer';
+            const tName = topicName || CONFIG.topicName || 'Unknown Topic';
+            const sName = subjectName || CONFIG.subjectName || 'Unknown Subject';
+
+            const viewerUrl = `viewer.html?file=${encodeURIComponent(url)}&label=${encodeURIComponent(label)}&topicId=${encodeURIComponent(tId)}&topicName=${encodeURIComponent(tName)}&subjectName=${encodeURIComponent(sName)}`;
+            window.open(viewerUrl, '_blank');
+        };
+
+        // --- Load Everything ---
+        function setRateLimitState(msg) {
+            const loadingTextEl = document.getElementById('loadingText');
+            if (loadingTextEl) loadingTextEl.innerText = msg;
+            const spinner = document.querySelector('#loadingState .animate-spin');
+            if (spinner) spinner.classList.add('hidden');
+        }
+
+        function showQuotaModal(msg, isAuthed = false, confirmLabel = null, cancelLabel = 'Maybe Later', redirectOnConfirm = true) {
+            const defaultAuthedMsg = rateLimitConfig.auth_limit_message;
+            const displayMsg = isAuthed && /sign in|sign up|please sign/i.test(msg)
+                ? defaultAuthedMsg
+                : msg;
+            setRateLimitState(displayMsg);
+            const finalConfirmLabel = confirmLabel ?? (isAuthed ? 'Open Settings' : 'Login / Sign Up');
+
+            showDialog({
+                title: 'Daily Limit Reached',
+                text: displayMsg,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: finalConfirmLabel,
+                cancelButtonText: cancelLabel,
+                confirmButtonColor: '#3b82f6'
+            }).then((result) => {
+                if (!redirectOnConfirm) return;
+
+                sessionStorage.setItem('fromPage', 'study');
+                if (result.isConfirmed) {
+                    if (isAuthed) {
+                        window.location.href = 'index.html?from=study&openSettings=true';
+                    } else {
+                        window.location.href = 'index.html?from=study&auth=true';
+                    }
+                } else {
+                    window.location.href = 'index.html?from=study';
+                }
+            });
+        }
+
+        async function loadStudySession() {
+            let rateLimited = false;
+            let rateLimitMessage = '';
+            const rateLimitedLinks = { youtube_link: null, notes_link: null };
+
+            try {
+                await loadRateLimitConfig();
+                document.getElementById('loadingText').innerText = 'Generating AI study plan...';
+
+                const { data: { session } } = await supabaseClient.auth.getSession();
+                const isAuthed = !!session;
+
+                // --- PROACTIVE LIMIT CHECK ---
+                try {
+                    if (!session) {
+                        const lRes = await fetch(`${API_BASE}/guest-limits`);
+                        if (lRes.ok) {
+                            const lim = await lRes.json();
+                            if (lim.gemini_remaining === 0 && lim.groq_remaining === 0) {
+                                rateLimited = true;
+                                rateLimitMessage = lim.guest_upgrade_message || rateLimitConfig.guest_upgrade_message;
+                                showQuotaModal(rateLimitMessage, false, null, 'Maybe Later');
+                                // Continue to fetch topic links so materials can still show.
+                            }
+                        }
+                    } else {
+                        const limitsRes = await fetch(`${API_BASE}/my-limits`, {
+                            headers: { 'Authorization': `Bearer ${session.access_token}` }
+                        });
+                        const prof = limitsRes.ok ? await limitsRes.json() : null;
+                        if (prof && (prof.gemini_remaining ?? 0) === 0 && (prof.groq_remaining ?? 0) === 0) {
+                            rateLimited = true;
+                            rateLimitMessage = prof.auth_limit_message || rateLimitConfig.auth_limit_message;
+                            showQuotaModal(rateLimitMessage, true, null, 'Maybe Later');
+                            // Continue to fetch topic links so materials can still show.
+                        }
+                    }
+                } catch (e) { console.warn("Proactive check failed", e); }
+
+                const headers = { 'Content-Type': 'application/json' };
+                if (session) headers['Authorization'] = `Bearer ${session.access_token}`;
+
+                // Fetch study data, PYQs, and cached quiz questions in parallel
+                const [studyRes, pyqsRes, cachedQRes] = await Promise.allSettled([
+                    fetch(`${API_BASE}/get-topic-data`, {
+                        method: 'POST',
+                        headers: headers,
+                        body: JSON.stringify({
+                            topic_id: CONFIG.topicId,
+                            topic_name: CONFIG.topicName,
+                            subject_name: CONFIG.subjectName
+                        })
+                    }),
+                    CONFIG.subjectId ? fetch(`${API_BASE}/pyqs/${CONFIG.subjectId}`) : Promise.resolve(null),
+                    fetch(`${API_BASE}/quiz-questions/${CONFIG.topicId}?count=24&difficulty=Medium`, {
+                        headers: session ? { 'Authorization': `Bearer ${session.access_token}` } : {}
+                    })
+                ]);
+
+                // --- Error Handling (Check for 429/Quota) ---
+                const responses = [studyRes, cachedQRes];
+                for (const res of responses) {
+                    if (res.status === 'fulfilled' && res.value && res.value.status === 429) {
+                        try {
+                            const err = await res.value.json();
+                            rateLimited = true;
+                            rateLimitMessage = err?.message || err?.detail || rateLimitConfig.guest_upgrade_message;
+                            rateLimitedLinks.youtube_link = err?.youtube_link || rateLimitedLinks.youtube_link;
+                            rateLimitedLinks.notes_link = err?.notes_link || rateLimitedLinks.notes_link;
+                        } catch {
+                            rateLimited = true;
+                            rateLimitMessage = rateLimitConfig.guest_upgrade_message;
+                        }
+                        showQuotaModal(rateLimitMessage, isAuthed, null, 'Maybe Later');
+                        // Continue on to show materials and any cached content
+                        break;
+                    }
+                    if (res.status === 'fulfilled' && res.value) {
+                        // Some backends might return 200 with a detail message when limited.
+                        try {
+                            const body = await res.value.clone().json();
+                            if (body && typeof body.detail === 'string' && body.detail.toLowerCase().includes('limit')) {
+                                rateLimited = true;
+                                rateLimitMessage = body.detail;
+                                rateLimitedLinks.youtube_link = body.youtube_link || rateLimitedLinks.youtube_link;
+                                rateLimitedLinks.notes_link = body.notes_link || rateLimitedLinks.notes_link;
+                                showQuotaModal(rateLimitMessage, isAuthed, null, 'Maybe Later');
+                                break;
+                            }
+                        } catch {
+                            // ignore parse errors
+                        }
+                    }
+                }
+
+                // --- Study Data ---
+                let studyData = null;
+                if (studyRes.status === 'fulfilled' && studyRes.value) {
+                    try {
+                        studyData = await studyRes.value.json();
+                    } catch {
+                        studyData = null;
+                    }
+                }
+
+                // Merge in any rate-limited links if backend didn't provide them via normal studyData
+                if (rateLimited) {
+                    studyData = studyData || {};
+                    if (!studyData.youtube_link) studyData.youtube_link = rateLimitedLinks.youtube_link;
+                    if (!studyData.notes_link) studyData.notes_link = rateLimitedLinks.notes_link;
+                }
+
+                if (studyData && studyData.model_used === 'groq') {
+                    showToast('Gemini rate limit reached. Using Groq (fallback model) to generate your study plan.', 'info', 5000);
+                }
+
+                // --- Materials ---
+                const materialsGrid = document.getElementById('materialsGrid');
+                let materialsHTML = '';
+                const youtubeLink = (studyData && studyData.youtube_link) || rateLimitedLinks.youtube_link;
+                const notesLink = (studyData && studyData.notes_link) || rateLimitedLinks.notes_link;
+
+                if (youtubeLink) {
+                    materialsHTML += `
+                    <a href="${youtubeLink}" target="_blank" class="flex flex-col items-center gap-2 p-4 bg-red-600/10 hover:bg-red-600/30 border border-red-600/30 rounded-xl transition-all text-center group">
+                        <svg class="w-8 h-8 text-red-400 group-hover:text-red-300 transition" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                        <span class="text-sm font-bold text-red-300">Video Lecture</span>
+                    </a>`;
+                }
+                if (notesLink) {
+                    materialsHTML += `
+                    <button
+                        onclick="openNotesViewer('${notesLink.replace(/'/g, "\\'")}', 'Study Notes')"
+                        data-notes-url="${notesLink.replace(/"/g, '&quot;')}"
+                        data-notes-label="Study Notes"
+                        class="flex flex-col items-center gap-2 p-4 bg-blue-600/10 hover:bg-blue-600/30 border border-blue-600/30 rounded-xl transition-all text-center group w-full">
+                        <svg class="w-8 h-8 text-blue-400 group-hover:text-blue-300 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        <span class="text-sm font-bold text-blue-300">Open in Viewer</span>
+                        <span class="text-[11px] text-slate-400">Drag-select any paragraph or diagram</span>
+                    </button>`;
+                }
+                // Always show an "AI Quiz" link to the custom quiz page
+                materialsHTML += `
+                <a href="quiz.html?topicId=${CONFIG.topicId}&topicName=${encodeURIComponent(CONFIG.topicName)}&subjectName=${encodeURIComponent(CONFIG.subjectName)}&numQuestions=8&difficulty=Medium&timePerQuestion=60" class="flex flex-col items-center gap-2 p-4 bg-purple-600/10 hover:bg-purple-600/30 border border-purple-600/30 rounded-xl transition-all text-center group">
+                    <svg class="w-8 h-8 text-purple-400 group-hover:text-purple-300 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <span class="text-sm font-bold text-purple-300">Custom Quiz</span>
+                </a>`;
+
+                if (!materialsHTML) materialsHTML = '<p class="text-gray-500 col-span-3 text-center text-sm">No materials available for this topic.</p>';
+                materialsGrid.innerHTML = materialsHTML;
+
+                // --- PYQs ---
+                if (pyqsRes.status === 'fulfilled' && pyqsRes.value && pyqsRes.value.ok) {
+                    const pyqs = await pyqsRes.value.json();
+                    if (Array.isArray(pyqs) && pyqs.length > 0) {
+                        document.getElementById('pyqSection').classList.remove('hidden');
+                        document.getElementById('pyqPills').innerHTML = pyqs.map(p => `
+                        <button onclick="openNotesViewer('${p.pdf_link.replace(/'/g, "\\'")}', 'PYQ ${p.year}', 'pyq-${p.id}', 'PYQ ${p.year}')" class="bg-gray-700 hover:bg-red-600 border border-gray-600 hover:border-red-500 text-gray-200 hover:text-white px-4 py-2 rounded-full text-sm font-semibold inline-flex items-center transition-all shadow-md">
+                            <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2-2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"></path></svg>
+                            Year ${p.year}
+                        </button>
+                    `).join('');
+                    }
+                }
+
+                // --- Pomodoro Plan ---
+                const pomodoroListEl = document.getElementById('pomodoroList');
+                if (rateLimited) {
+                    pomodoroListEl.innerHTML = `<div class="rounded-lg border border-yellow-500/40 bg-yellow-500/10 p-4 text-yellow-200 text-sm">
+                        AI quota reached, so the study roadmap cannot be generated right now. Try again tomorrow or add your own API key in Settings.
+                    </div>`;
+                } else if (studyData && studyData.pomodoro_plan) {
+                    pomodoroListEl.innerHTML = studyData.pomodoro_plan.map(plan => `
+                    <div class="bg-gray-900 p-4 rounded-lg border-l-4 border-blue-500">
+                        <div class="flex justify-between items-center mb-2">
+                            <h4 class="font-bold text-lg">Step ${plan.step}: ${plan.title}</h4>
+                            <span class="bg-blue-900 text-blue-300 text-xs font-bold px-3 py-1 rounded-full">${plan.duration_minutes} Min</span>
+                        </div>
+                        <ul class="list-disc list-inside text-gray-400 text-sm space-y-1 mb-4">
+                            ${plan.action_items.map(item => '<li>' + item + '</li>').join('')}
+                        </ul>
+                        <button onclick="startPomodoro(${plan.duration_minutes}, '${plan.title.replace(/'/g, "\\'")}')" 
+                                class="w-full bg-blue-600/20 hover:bg-blue-600 text-blue-300 hover:text-white border border-blue-600 border-opacity-50 font-semibold py-2 px-4 rounded transition-colors text-sm flex items-center justify-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            Start Focus Session
+                        </button>
+                    </div>
+                `).join('');
+                } else {
+                    pomodoroListEl.innerHTML = '<p class="text-gray-400 text-sm">No study plan available yet.</p>';
+                }
+
+                // --- Quiz: Hybrid cached + from study data, pick 8 randomly ---
+                let allQuizQuestions = [];
+
+                // Add cached questions
+                if (cachedQRes.status === 'fulfilled' && cachedQRes.value && cachedQRes.value.ok) {
+                    const cachedQuestions = await cachedQRes.value.json();
+                    if (Array.isArray(cachedQuestions)) allQuizQuestions = [...cachedQuestions];
+                }
+
+                // Add questions from the study data response (these were just generated/cached by the backend)
+                if (studyData && Array.isArray(studyData.quiz)) {
+                    allQuizQuestions = [...allQuizQuestions, ...studyData.quiz];
+                }
+
+                // Deduplicate by question text
+                const seen = new Set();
+                allQuizQuestions = allQuizQuestions.filter(q => {
+                    const key = q.question;
+                    if (seen.has(key)) return false;
+                    seen.add(key);
+                    return true;
+                });
+
+                // If we're rate limited, show a message instead of AI-generated quiz questions
+                if (rateLimited) {
+                    document.getElementById('quizList').innerHTML = `
+                        <div class="rounded-lg border border-yellow-500/40 bg-yellow-500/10 p-4 text-yellow-200 text-sm">
+                            AI quota reached, so Knowledge Check questions cannot be generated right now. Try again tomorrow or add your own API key in Settings.
+                        </div>
+                    `;
+                } else {
+                    // Shuffle and pick 8
+                    const selected = shuffleArray(allQuizQuestions).slice(0, 8);
+
+                    if (selected.length > 0) {
+                        document.getElementById('quizList').innerHTML = selected.map((q, qIndex) => `
+                        <div class="bg-gray-900 p-4 rounded-lg border border-gray-800" id="question-${qIndex}">
+                            <p class="font-bold mb-4 text-lg">${qIndex + 1}. ${q.question}</p>
+                            <div class="space-y-3">
+                                ${q.options.map((opt, oIndex) => `
+                                    <button onclick="checkAnswer(${qIndex}, ${oIndex}, ${q.correct_answer_index})"
+                                            id="btn-${qIndex}-${oIndex}"
+                                            class="w-full text-left bg-gray-800 hover:bg-gray-700 p-4 rounded-lg border border-gray-700 text-sm transition-all shadow-sm">
+                                        <span class="font-bold text-gray-400 mr-2">${String.fromCharCode(65 + oIndex)}.</span> ${opt}
+                                    </button>
+                                `).join('')}
+                            </div>
+                            <div id="explanation-${qIndex}" class="hidden mt-6 p-4 bg-gray-800 border-l-4 border-blue-500 rounded-r-lg text-sm text-gray-300 leading-relaxed shadow-inner">
+                                <span class="font-bold text-blue-400 uppercase tracking-wider text-xs block mb-1">AI Explanation</span>
+                                ${q.explanation || ''}
+                            </div>
+                        </div>
+                    `).join('');
+                    } else {
+                        document.getElementById('quizList').innerHTML = '<p class="text-gray-500 text-sm italic">No quiz questions available yet.</p>';
+                    }
+                }
+
+                // Show main content
+                document.getElementById('loadingState').classList.add('hidden');
+                document.getElementById('mainContent').classList.remove('hidden');
+
+            } catch (e) {
+                console.error('Failed:', e);
+                const msg = e?.message || 'Error loading study session.';
+
+                // If it looks like a rate/limit error, show quota UI.
+                if (typeof msg === 'string' && /limit|quota/i.test(msg)) {
+                    const fallbackMsg = isAuthed
+                        ? 'You have exceeded your daily AI quota. Try again tomorrow or add your own API key in Settings.'
+                        : 'You have exceeded your daily AI quota. Sign in or add your own API key to continue.';
+                    showQuotaModal(fallbackMsg, isAuthed, null, 'Maybe Later');
+                    // Let the page show materials even when AI is blocked
+                    document.getElementById('loadingState').classList.add('hidden');
+                    document.getElementById('mainContent').classList.remove('hidden');
+                    return;
+                }
+
+                const loadingTextEl = document.getElementById('loadingText');
+                if (loadingTextEl) loadingTextEl.innerText = 'Error loading study session.';
+                const spinner = document.querySelector('#loadingState .animate-spin');
+                if (spinner) spinner.classList.add('hidden');
+            }
+        }
+
+        // --- Answer Checker ---
+        window.checkAnswer = function (qIndex, selectedIdx, correctIdx) {
+            const container = document.getElementById(`question-${qIndex}`);
+            const buttons = container.querySelectorAll('button');
+            buttons.forEach(btn => { btn.disabled = true; btn.classList.remove('hover:bg-gray-700'); btn.classList.add('opacity-75', 'cursor-not-allowed'); });
+            const selectedBtn = document.getElementById(`btn-${qIndex}-${selectedIdx}`);
+            const correctBtn = document.getElementById(`btn-${qIndex}-${correctIdx}`);
+            if (selectedIdx === correctIdx) {
+                selectedBtn.classList.replace('bg-gray-800', 'bg-green-700');
+                selectedBtn.classList.replace('border-gray-700', 'border-green-500');
+            } else {
+                selectedBtn.classList.replace('bg-gray-800', 'bg-red-700');
+                selectedBtn.classList.replace('border-gray-700', 'border-red-500');
+                correctBtn.classList.replace('bg-gray-800', 'bg-green-700');
+                correctBtn.classList.replace('border-gray-700', 'border-green-500');
+            }
+            document.getElementById(`explanation-${qIndex}`).classList.remove('hidden');
+        };
+
+        // --- Pomodoro Timer & Tracking ---
+        let timerInterval, expectedEndTime, currentFocusDuration = 0;
+
+        async function trackSessionStats(status) {
+            if (!currentFocusDuration) return;
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (session) {
+                try {
+                    await fetch(`${API_BASE}/submit-focus-session`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+                        body: JSON.stringify({ topic_id: CONFIG.topicId, duration_minutes: currentFocusDuration, status: status })
+                    });
+                } catch (e) { console.error('Session track err:', e); }
+            }
+        }
+
+        window.startPomodoro = function (durationMinutes, title) {
+            currentFocusDuration = durationMinutes;
+            document.getElementById('focusTitle').innerText = title;
+            document.getElementById('sessionCompleteMsg').classList.add('hidden');
+            document.getElementById('timerControls').classList.remove('hidden');
+            document.getElementById('focusOverlay').classList.remove('hidden');
+            document.getElementById('focusOverlay').classList.add('flex');
+
+            // Populate focus materials from the main page materials
+            const matGrid = document.getElementById('materialsGrid');
+            const focusMatLinks = document.getElementById('focusMaterialLinks');
+            if (matGrid && focusMatLinks) {
+                const items = matGrid.querySelectorAll('a, button');
+                focusMatLinks.innerHTML = '';
+                items.forEach(item => {
+                    const label = item.querySelector('span');
+                    if (label) {
+                        const notesUrl = item.dataset?.notesUrl;
+                        if (notesUrl) {
+                            const pill = document.createElement('button');
+                            pill.type = 'button';
+                            pill.className = 'bg-gray-700 hover:bg-blue-600 text-gray-200 hover:text-white px-3 py-1.5 rounded-full text-xs font-semibold transition-all';
+                            pill.innerText = item.dataset?.notesLabel || label.innerText;
+                            pill.onclick = () => openNotesViewer(notesUrl, item.dataset?.notesLabel || 'Study Notes');
+                            focusMatLinks.appendChild(pill);
+                        } else if (item.tagName === 'A') {
+                            const pill = document.createElement('a');
+                            pill.href = item.href;
+                            pill.target = '_blank';
+                            pill.className = 'bg-gray-700 hover:bg-blue-600 text-gray-200 hover:text-white px-3 py-1.5 rounded-full text-xs font-semibold transition-all';
+                            pill.innerText = label.innerText;
+                            focusMatLinks.appendChild(pill);
+                        }
+                    }
+                });
+            }
+            // Populate PYQ links
+            const pyqPills = document.getElementById('pyqPills');
+            const focusPyqLinks = document.getElementById('focusPyqLinks');
+            if (pyqPills && focusPyqLinks) {
+                const links = pyqPills.querySelectorAll('a');
+                focusPyqLinks.innerHTML = '';
+                links.forEach(a => {
+                    const pill = a.cloneNode(true);
+                    pill.className = 'bg-gray-700 hover:bg-red-600 text-gray-200 hover:text-white px-3 py-1.5 rounded-full text-xs font-semibold transition-all';
+                    pill.innerText = a.innerText.trim();
+                    focusPyqLinks.appendChild(pill);
+                });
+            }
+
+            expectedEndTime = Date.now() + (durationMinutes * 60 * 1000);
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(updateTimer, 250);
+            updateTimer();
+        };
+
+        function updateTimer() {
+            const remaining = Math.max(0, expectedEndTime - Date.now());
+            if (remaining <= 0) { clearInterval(timerInterval); completeSession(); return; }
+            const totalSec = Math.ceil(remaining / 1000);
+            const min = Math.floor(totalSec / 60);
+            const sec = totalSec % 60;
+            document.getElementById('timerDisplay').innerText = `${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+        }
+
+        function completeSession() {
+            document.getElementById('timerControls').classList.add('hidden');
+            document.getElementById('sessionCompleteMsg').classList.remove('hidden');
+            trackSessionStats('completed');
+        }
+
+        window.abandonSession = function () {
+            if (confirm("Abandon this focus session?")) {
+                closeFocusOverlay();
+                trackSessionStats('abandoned');
+            }
+        };
+
+        window.closeFocusOverlay = function () {
+            if (timerInterval) clearInterval(timerInterval);
+            document.getElementById('focusOverlay').classList.add('hidden');
+            document.getElementById('focusOverlay').classList.remove('flex');
+        };
+
+        // --- Boot ---
+        loadStudySession();
+    </script>
+</body>
+
+</html>

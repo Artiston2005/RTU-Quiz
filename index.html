@@ -1,0 +1,1253 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RTUKaGyan</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="dns-prefetch" href="https://bcijwutbbhxhhypicmvc.supabase.co">
+    <link href="assets/style.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+</head>
+
+<body class="bg-rtu-bg text-gray-100 font-sans min-h-screen px-4 py-6 md:px-8 flex flex-col relative overflow-x-hidden">
+
+    <div id="splashScreen">
+        <div class="splash-logo-wrap">
+            <img src="assets/favicon.webp" alt="RTUKaGyan" onerror="this.style.display='none'">
+            <span class="splash-orbit-dot"></span>
+            <span class="splash-orbit-dot"></span>
+            <span class="splash-orbit-dot"></span>
+            <div class="splash-ripple"></div>
+            <div class="splash-ripple"></div>
+        </div>
+        <h1 class="splash-title">RTUKaGyan</h1>
+        <p class="splash-subtitle">RTU Learning Studio</p>
+        <div class="splash-progress-wrap">
+            <div class="splash-progress-track">
+                <div class="splash-progress-bar" id="splashProgressBar"></div>
+            </div>
+            <div class="splash-status">
+                <span id="splashStatusText">Fetching syllabus</span>
+                <span class="splash-dots"><span></span><span></span><span></span></span>
+            </div>
+        </div>
+    </div>
+
+    <div aria-hidden="true" class="pointer-events-none fixed inset-0 -z-10">
+        <div class="absolute -top-40 -right-32 h-80 w-80 rounded-full bg-rtu-accent-soft blur-3xl opacity-70"></div>
+        <div class="absolute -bottom-40 -left-24 h-80 w-80 rounded-full bg-purple-700/30 blur-3xl opacity-60"></div>
+        <div class="absolute inset-x-0 top-40 mx-auto h-px w-[90%] max-w-5xl bg-gradient-to-r from-transparent via-slate-700/60 to-transparent"></div>
+    </div>
+
+    <div class="max-w-5xl mx-auto flex-1 w-full">
+        <header class="flex flex-col gap-6 md:flex-row md:items-center md:justify-between mb-10 relative">
+            <div class="flex items-center gap-3">
+                <img src="assets/favicon.webp" alt="Logo" class="w-11 h-11 md:w-12 md:h-12 object-contain drop-shadow-lg"
+                    onerror="this.style.display='none'">
+                <div>
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400 mb-1">RTU LEARNING STUDIO</p>
+                    <h1 class="text-3xl md:text-4xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-sky-400 via-rtu-accent to-fuchsia-400 pb-1">
+                        RTUKaGyan
+                    </h1>
+                    <p class="text-xs md:text-sm text-slate-400 mt-1 max-w-lg">
+                        A focused workspace for RTU students to plan, practice, and master every subject with AI-assisted roadmaps and quizzes.
+                    </p>
+                </div>
+            </div>
+
+            <div id="authContainer" class="flex items-center gap-4 mt-2 md:mt-0">
+                <div id="guestLimitsBadge" class="hidden text-right">
+                    <p class="text-[10px] text-slate-500 uppercase font-bold tracking-[0.24em]">Guest access</p>
+                    <p class="text-[11px] font-semibold text-slate-300">
+                        <span id="guestGemini" class="text-emerald-400 font-bold">3</span> AI sessions •
+                        <span id="guestGroq" class="text-amber-300 font-bold">5</span> fallback
+                    </p>
+                </div>
+
+                <button id="loginBtn" onclick="openAuthModal()"
+                    class="inline-flex bg-rtu-accent/90 hover:bg-rtu-accent text-white border border-rtu-accent-soft px-4 py-2.5 rounded-full text-xs md:text-sm font-semibold tracking-wide transition-all shadow-lg shadow-rtu-accent/40 hover:-translate-y-0.5">
+                    Login / Sign Up
+                </button>
+
+                <div id="userMenu" class="hidden relative group cursor-pointer">
+                    <div class="flex items-center gap-2 bg-rtu-card border border-rtu-border px-4 py-2 rounded-full shadow-md hover:bg-slate-800/80 transition">
+                        <div class="w-7 h-7 rounded-full bg-rtu-accent flex items-center justify-center text-white text-xs font-bold shadow-lg shadow-rtu-accent/40"
+                            id="userInitial">U</div>
+                        <span id="userNameDisplay" class="text-sm font-semibold text-slate-100 max-w-[120px] truncate">User</span>
+                        <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7">
+                            </path>
+                        </svg>
+                    </div>
+                    <div class="absolute right-0 mt-3 w-64 bg-slate-900/95 border border-rtu-border rounded-2xl shadow-rtu-elevated opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-20 overflow-hidden backdrop-blur-xl">
+                        <div class="p-4 border-b border-slate-800 bg-gradient-to-b from-slate-900/70 to-slate-900/95">
+                            <p class="text-[11px] text-slate-400 mb-1 uppercase tracking-[0.18em] font-semibold">AI usage</p>
+                            <p class="text-xs text-slate-500 mb-3">Daily credits for your account</p>
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-[10px] text-slate-400 uppercase tracking-[0.18em] mb-1">Gemini</p>
+                                    <p class="text-xl font-extrabold text-emerald-400 leading-none">
+                                        <span id="apiLimitsDisplay">--</span><span
+                                            class="text-xs font-semibold text-slate-500"> / <span id="authGeminiLimitTotal">15</span></span>
+                                    </p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-[10px] text-slate-400 uppercase tracking-[0.18em] mb-1">Fallback</p>
+                                    <p class="text-xl font-extrabold text-amber-300 leading-none">
+                                        <span id="groqLimitsDisplay">--</span><span
+                                            class="text-xs font-semibold text-slate-500"> / <span id="authGroqLimitTotal">20</span></span>
+                                    </p>
+                                </div>
+                            </div>
+                            <p class="text-[10px] text-slate-500 mt-3">Resets daily at midnight (IST).</p>
+                        </div>
+                        <button onclick="openSettingsModal()" class="w-full text-left px-4 py-3 text-sm text-slate-200 hover:bg-slate-800 hover:text-white font-medium transition border-b border-slate-800">
+                            ⚙️ Settings (BYOK)
+                        </button>
+                        <button onclick="openStatsModal()" class="w-full text-left px-4 py-3 text-sm text-blue-300 hover:bg-slate-800 hover:text-blue-200 font-medium transition border-b border-slate-800">
+                            📊 My Stats
+                        </button>
+                        <button onclick="signOut()"
+                            class="w-full text-left px-4 py-3 text-sm text-rose-300 hover:bg-slate-800 hover:text-rose-200 font-medium transition">
+                            Sign Out
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="space-y-8">
+        <section class="bg-rtu-card/95 backdrop-blur-xl p-5 md:p-6 lg:p-7 rounded-3xl border border-rtu-border shadow-rtu-elevated card-lift stagger-1">
+            <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-6">
+                <div>
+                    <p class="text-[11px] text-slate-400 uppercase tracking-[0.25em] font-semibold mb-2">Start a session</p>
+                    <h2 class="text-xl md:text-2xl font-bold text-slate-50 mb-1">Choose your RTU context</h2>
+                    <p class="text-xs md:text-sm text-slate-400 max-w-xl">
+                        We’ll pull your syllabus, PYQs, and topic map so RTUKaGyan can generate a focused roadmap and quiz set for you.
+                    </p>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1.5 tracking-wide">Branch</label>
+                    <select id="branchSelect" class="w-full bg-slate-950/80 border border-slate-700/80 text-slate-100 text-sm rounded-xl focus:ring-2 focus:ring-rtu-accent focus:border-rtu-accent/70 block px-3 py-2.5 transition">
+                        <option value="">Select Branch</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1.5 tracking-wide">Year</label>
+                    <select id="yearSelect" disabled class="w-full bg-slate-950/60 border border-slate-800 text-slate-500 text-sm rounded-xl focus:ring-2 focus:ring-rtu-accent focus:border-rtu-accent/70 block px-3 py-2.5 disabled:opacity-60 transition">
+                        <option value="">Select Year</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1.5 tracking-wide">Semester</label>
+                    <select id="semesterSelect" disabled class="w-full bg-slate-950/60 border border-slate-800 text-slate-500 text-sm rounded-xl focus:ring-2 focus:ring-rtu-accent focus:border-rtu-accent/70 block px-3 py-2.5 disabled:opacity-60 transition">
+                        <option value="">Select Semester</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1.5 tracking-wide">Subject</label>
+                    <select id="subjectSelect" disabled class="w-full bg-slate-950/60 border border-slate-800 text-slate-500 text-sm rounded-xl focus:ring-2 focus:ring-rtu-accent focus:border-rtu-accent/70 block px-3 py-2.5 disabled:opacity-60 transition">
+                        <option value="">Select Subject</option>
+                    </select>
+                </div>
+            </div>
+            <p id="loadingStatus" class="text-amber-300 mt-3 hidden animate-pulse font-medium text-xs md:text-sm text-center bg-slate-900/60 border border-amber-500/30 rounded-full py-1.5 px-4 inline-flex mx-auto items-center justify-center gap-2">
+                <span class="h-1.5 w-1.5 rounded-full bg-amber-300 animate-ping"></span>
+                <span>Synchronizing with RTUPedia backend…</span>
+            </p>
+        </section>
+
+        <div id="actionHubContainer" class="hidden mb-8"></div>
+
+        <div id="payloadContainer" class="hidden space-y-6 md:space-y-8">
+            <section class="bg-rtu-card/95 p-6 md:p-7 rounded-3xl border border-rtu-border shadow-rtu-elevated">
+                <div class="flex items-start justify-between gap-4 mb-4">
+                    <h3 id="studyPlanHeader" class="text-xl md:text-2xl font-semibold text-emerald-300 flex items-center">
+                    <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                        AI Study Roadmap (Pomodoro)
+                    </h3>
+                    <p class="hidden md:block text-[11px] text-slate-400 max-w-xs text-right">
+                        Structured 25–50 minute focus blocks tailored to your topic, with built-in accountability.
+                    </p>
+                </div>
+                <div id="pomodoroList" class="space-y-4"></div>
+            </section>
+
+            <section class="bg-rtu-card/95 p-6 md:p-7 rounded-3xl border border-rtu-border shadow-rtu-elevated">
+                <div class="flex items-start justify-between gap-4 mb-4">
+                    <h3 class="text-xl md:text-2xl font-semibold text-purple-300 flex items-center">
+                    <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                        Knowledge Check
+                    </h3>
+                    <p class="hidden md:block text-[11px] text-slate-400 max-w-xs text-right">
+                        Short, adaptive quizzes powered by cached and AI-generated questions to lock in the concept.
+                    </p>
+                </div>
+                <div id="quizList" class="space-y-6"></div>
+            </section>
+        </div>
+        </main>
+    </div>
+
+    <div id="settingsModal" class="fixed inset-0 bg-gray-900/90 z-50 hidden items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-gray-800 border border-gray-700 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h2 class="text-2xl font-black text-white">Power User Settings</h2>
+                        <p class="text-xs text-gray-400 mt-1">Unlock unlimited AI generations</p>
+                    </div>
+                    <button onclick="closeSettingsModal()" class="text-gray-400 hover:text-white transition">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+    
+                <div class="space-y-4">
+                    <div class="bg-blue-900/20 border border-blue-500/30 p-4 rounded-lg">
+                        <p class="text-xs text-blue-300 mb-2"><strong>Bring Your Own Key (BYOK)</strong></p>
+                        <p class="text-[10px] text-gray-400 leading-relaxed">
+                            Paste your personal Google Gemini API key here to bypass the shared daily app quota. Your key is stored securely and only used for your requests. Get a free key at <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-blue-400 hover:underline">Google AI Studio</a>.
+                        </p>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-wide mb-1">Gemini API Key</label>
+                        <input type="password" id="customApiKeyInput" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition" placeholder="AIzaSy...">
+                    </div>
+                    <button onclick="saveApiKey()" id="saveKeyBtn" class="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-bold py-3 rounded-lg shadow-lg transition transform hover:-translate-y-0.5">
+                        Save Key
+                    </button>
+                    <button onclick="clearApiKey()" class="w-full text-xs text-gray-500 hover:text-red-400 transition mt-2">
+                        Remove saved key
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="statsModal" class="fixed inset-0 bg-gray-900/90 z-50 hidden items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-gray-800 border border-gray-700 rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl">
+            <div class="p-6 text-left">
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h2 class="text-2xl font-black text-white">Your Progress</h2>
+                        <p class="text-xs text-gray-400 mt-1">Track your consistency and performance</p>
+                    </div>
+                    <button onclick="closeStatsModal()" class="text-gray-400 hover:text-white transition">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+    
+                <div class="grid grid-cols-3 gap-4 mb-8">
+                    <div class="bg-gray-900 border border-gray-700 p-4 rounded-xl text-center">
+                        <p class="text-[10px] text-gray-500 uppercase font-black mb-1">Total Quizzes</p>
+                        <p id="totalQuizzesValue" class="text-3xl font-black text-blue-400">0</p>
+                    </div>
+                    <div class="bg-gray-900 border border-gray-700 p-4 rounded-xl text-center">
+                        <p class="text-[10px] text-gray-500 uppercase font-black mb-1">Completed Sessions</p>
+                        <p id="completedSessionsValue" class="text-3xl font-black text-green-400">0</p>
+                    </div>
+                    <div class="bg-gray-900 border border-gray-700 p-4 rounded-xl text-center">
+                        <p class="text-[10px] text-gray-500 uppercase font-black mb-1">Failed Sessions</p>
+                        <p id="failedSessionsValue" class="text-3xl font-black text-red-400">0</p>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest">Recent Performance</h3>
+                    <div class="bg-gray-900 border border-gray-700 rounded-xl overflow-hidden max-h-60 overflow-y-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-gray-800 text-gray-400 uppercase text-[10px] font-black sticky top-0">
+                                <tr>
+                                    <th class="px-4 py-3">Topic</th>
+                                    <th class="px-4 py-3 text-center">Score</th>
+                                    <th class="px-4 py-3 text-right">Date</th>
+                                </tr>
+                            </thead>
+                            <tbody id="statsTableBody" class="text-gray-300 divide-y divide-gray-800">
+                                <tr>
+                                    <td colspan="3" class="px-4 py-8 text-center text-gray-500 italic">No scores yet. Take a quiz to start!</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="customQuizModal" class="fixed inset-0 bg-gray-900/80 z-50 hidden flex-col items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-gray-800 border border-gray-700 rounded-xl p-6 w-full max-w-md shadow-2xl">
+            <h2 class="text-2xl font-bold text-purple-400 mb-4 flex items-center">
+                <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                Custom Quiz Creator
+            </h2>
+            <p id="customQuizTopicName" class="text-gray-300 text-sm mb-6 font-semibold"></p>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-gray-400 text-sm mb-1">Number of Questions</label>
+                    <input type="number" id="quizNumQuestions" class="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-white" value="8" min="1" max="30">
+                </div>
+                <div>
+                    <label class="block text-gray-400 text-sm mb-1">Difficulty Level</label>
+                    <select id="quizDifficulty" class="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-white">
+                        <option value="Easy">Easy (Conceptual)</option>
+                        <option value="Medium" selected>Medium (Application)</option>
+                        <option value="Hard">Hard (Analytical)</option>
+                        <option value="GATE">GATE Level (Advanced)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-gray-400 text-sm mb-1">Time per Question (seconds)</label>
+                    <input type="number" id="quizTimePerQuestion" class="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-white" value="60" min="10" max="600">
+                </div>
+            </div>
+            <div class="mt-8 flex gap-3">
+                <button onclick="closeCustomQuizModal()" class="flex-1 bg-gray-700 hover:bg-gray-600 border border-gray-600 text-white py-2 rounded font-medium transition-colors">Cancel</button>
+                <button onclick="submitCustomQuiz()" class="flex-1 bg-purple-600 hover:bg-purple-500 border border-purple-500 text-white py-2 rounded font-medium transition-colors">Generate</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="focusOverlay" class="fixed inset-0 bg-gray-900 z-50 hidden flex-col items-center justify-center p-4">
+        <div class="max-w-md w-full text-center">
+            <h2 id="focusTitle" class="text-3xl font-bold text-blue-400 mb-2">Focus Session</h2>
+            <p class="text-gray-400 mb-8">Stay focused. Do not close this tab.</p>
+            <div class="text-8xl font-mono font-bold text-white mb-12 tracking-wider drop-shadow-lg" id="timerDisplay">25:00</div>
+            <div class="space-y-4">
+                <div id="timerControls">
+                    <button onclick="abandonSession()" class="text-gray-500 hover:text-red-400 text-sm underline transition-colors">Abandon Session</button>
+                </div>
+                <div id="sessionCompleteMsg" class="hidden">
+                    <p class="text-green-400 font-bold text-xl mb-6 flex items-center justify-center gap-2">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        Session Completed!
+                    </p>
+                    <button onclick="closeFocusOverlay()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition-all w-full">Return to Roadmap</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="authModal" class="fixed inset-0 bg-gray-900/90 z-50 hidden items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-gray-800 border border-gray-700 rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h2 id="authTitle" class="text-2xl font-black text-white">Welcome Back</h2>
+                        <p id="authSubtitle" class="text-xs text-gray-400 mt-1">Sign in to track your stats</p>
+                    </div>
+                    <button onclick="closeAuthModal()" class="text-gray-400 hover:text-white transition">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="space-y-4 mt-6">
+                    <button onclick="signInWithGoogle()" class="w-full bg-white hover:bg-gray-100 text-gray-900 font-bold py-3 px-4 rounded-lg shadow transition flex items-center justify-center gap-3">
+                        <svg class="w-5 h-5" viewBox="0 0 48 48">
+                            <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.7 17.74 9.5 24 9.5z"></path>
+                            <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path>
+                            <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path>
+                            <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path>
+                        </svg>
+                        Continue with Google
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+    <footer class="max-w-5xl mx-auto mt-auto pt-10 pb-7 w-full">
+        <div class="border-t border-slate-800/70 pt-7 grid grid-cols-1 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] gap-6 items-stretch">
+            <div class="bg-slate-900/60 border border-slate-800/80 rounded-2xl md:rounded-3xl p-6 md:p-7 text-center md:text-left flex flex-col md:flex-row md:items-center gap-4 md:gap-6">
+                <div class="flex flex-col items-center md:items-start">
+                    <p class="text-[11px] text-slate-500 uppercase tracking-[0.24em] mb-3 font-semibold">Crafted by</p>
+                    <img src="assets/ashwin_profile.webp" alt="Ashwin Yadav" class="w-14 h-14 md:w-16 md:h-16 rounded-full mb-3 object-cover border border-slate-600 shadow-lg shadow-slate-900/80" loading="lazy" onerror="this.style.display='none'">
+                    <h3 class="text-base md:text-lg font-semibold text-slate-50 mb-1">Ashwin Yadav</h3>
+                    <p class="text-xs text-slate-400 max-w-xs">
+                        Building student-first tools for RTU — from syllabus to PYQs to AI assistance in one place.
+                    </p>
+                </div>
+                <div class="flex flex-1 items-center justify-center md:justify-end gap-4 mt-1 md:mt-0">
+                    <a href="https://github.com/Artiston2005" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center rounded-full h-9 w-9 border border-slate-700/70 bg-slate-900/80 text-slate-300 hover:text-white hover:border-rtu-accent hover:bg-rtu-accent/10 transition" title="GitHub">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" /></svg>
+                    </a>
+                    <a href="https://www.linkedin.com/in/ashwin-yadav-1704a1248" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center rounded-full h-9 w-9 border border-slate-700/70 bg-slate-900/80 text-slate-300 hover:text-sky-400 hover:border-sky-500 hover:bg-slate-900/60 transition" title="LinkedIn">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" /></svg>
+                    </a>
+                    <a href="/cdn-cgi/l/email-protection#c7a6b4afb0aea9bea6a3a6b1f5f3f7ff87a0aaa6aeabe9a4a8aa" class="inline-flex items-center justify-center rounded-full h-9 w-9 border border-slate-700/70 bg-slate-900/80 text-slate-300 hover:text-rose-300 hover:border-rose-500 hover:bg-rose-500/10 transition" title="Email">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                    </a>
+                </div>
+            </div>
+
+            <div class="bg-slate-900/60 border border-slate-800/80 rounded-2xl md:rounded-3xl p-6 md:p-7 text-center flex flex-col justify-center items-center group cursor-pointer">
+                <p class="text-[11px] text-slate-500 uppercase tracking-[0.24em] mb-3 font-semibold">Powered by</p>
+                <a href="https://rtupedia.vercel.app/" target="_blank" rel="noopener noreferrer" class="bg-slate-950/80 border border-slate-800 p-4 rounded-2xl shadow-inner group-hover:border-rtu-accent/60 group-hover:bg-slate-900/80 transition duration-300 w-full max-w-[220px] flex flex-col items-center justify-center gap-2">
+                    <img src="assets/rtupedia.png" alt="RTUpedia Logo" class="w-12 h-12 object-contain" loading="lazy" onerror="this.style.display='none'">
+                    <h2 class="text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-sky-400 via-rtu-accent to-fuchsia-400">
+                        RTUpedia
+                    </h2>
+                </a>
+                <p class="text-xs text-slate-400 mt-4 max-w-[260px] mx-auto leading-relaxed">
+                    Student-powered platform unifying notes, PYQs, tools, and resources for every RTU B.Tech student.
+                </p>
+            </div>
+        </div>
+        <p class="text-[11px] text-slate-500 mt-6 text-center">© 2026 <span class="font-semibold text-white">RTUKagyan</span> By Ashwin Yadav. All rights reserved.</p>
+    </footer>
+
+    <script>
+        const API_BASE = '';
+        let rateLimitConfig = {
+            auth_gemini_limit: 15,
+            auth_groq_limit: 20,
+            guest_gemini_limit: 3,
+            guest_groq_limit: 5,
+            auth_total_limit: 35,
+            guest_upgrade_message: "You've exhausted your free guest generations. Sign in to get 35 daily credits!",
+            auth_limit_message: "Daily Limits Reached. Come back tomorrow or add your own API Key in Settings!"
+        };
+
+        async function loadRateLimitConfig() {
+            try {
+                const res = await fetch(`${API_BASE}/rate-limit-settings`);
+                if (!res.ok) return rateLimitConfig;
+                const data = await res.json();
+                rateLimitConfig = { ...rateLimitConfig, ...data };
+            } catch (err) {
+                console.warn('Failed to load rate limit config', err);
+            }
+            return rateLimitConfig;
+        }
+
+        function applyRateLimitConfigToUi() {
+            const authGeminiTotal = document.getElementById('authGeminiLimitTotal');
+            const authGroqTotal = document.getElementById('authGroqLimitTotal');
+            if (authGeminiTotal) authGeminiTotal.innerText = rateLimitConfig.auth_gemini_limit ?? 15;
+            if (authGroqTotal) authGroqTotal.innerText = rateLimitConfig.auth_groq_limit ?? 20;
+        }
+
+        // --- Custom Modal / Toast Helper (replaces SweetAlert) ---
+        function showToast(message, type = 'info', duration = 2500) {
+            const colors = {
+                info: 'bg-rtu-accent text-white',
+                success: 'bg-emerald-500 text-white',
+                warning: 'bg-amber-400 text-slate-900',
+                error: 'bg-rose-500 text-white'
+            };
+            const wrapper = document.createElement('div');
+            wrapper.className = `fixed top-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg shadow-black/40 border border-white/10 bg-opacity-90 ${colors[type] || colors.info}`;
+            wrapper.style.minWidth = '240px';
+            wrapper.style.backdropFilter = 'blur(12px)';
+            wrapper.style.zIndex = '110';
+            wrapper.innerHTML = `<span class="font-semibold">${message}</span>`;
+            document.body.appendChild(wrapper);
+            setTimeout(() => {
+                wrapper.classList.add('opacity-0');
+                setTimeout(() => wrapper.remove(), 200);
+            }, duration);
+        }
+
+        function showDialog({ title = '', text = '', icon = 'info', showCancelButton = false, confirmButtonText = 'OK', cancelButtonText = 'Cancel', confirmButtonColor = '#3b82f6' }) {
+            return new Promise((resolve) => {
+                let modal = document.getElementById('appModal');
+                if (!modal) {
+                    modal = document.createElement('div');
+                    modal.id = 'appModal';
+                    modal.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4 py-6';
+                    modal.style.zIndex = '100';
+                    modal.innerHTML = `
+                        <div class="w-full max-w-md bg-slate-900/80 border border-slate-800/60 rounded-3xl shadow-2xl p-6 text-left" style="backdrop-filter: blur(16px);">
+                            <div class="flex items-start gap-4 mb-4">
+                                <div id="appModalIcon" class="w-10 h-10 rounded-full flex items-center justify-center bg-slate-800 text-white text-xl"></div>
+                                <div class="flex-1">
+                                    <h2 id="appModalTitle" class="text-lg font-bold text-white mb-1"></h2>
+                                    <p id="appModalText" class="text-sm text-slate-200"></p>
+                                </div>
+                            </div>
+                            <div class="mt-6 flex justify-end gap-3">
+                                <button id="appModalCancel" class="px-4 py-2 rounded-full bg-slate-800 text-slate-200 hover:bg-slate-700 transition hidden">Cancel</button>
+                                <button id="appModalConfirm" class="px-4 py-2 rounded-full text-white" style="background:${confirmButtonColor};">OK</button>
+                            </div>
+                        </div>
+                    `;
+                    document.body.appendChild(modal);
+                }
+
+                const titleEl = modal.querySelector('#appModalTitle');
+                const textEl = modal.querySelector('#appModalText');
+                const iconEl = modal.querySelector('#appModalIcon');
+                const confirmBtn = modal.querySelector('#appModalConfirm');
+                const cancelBtn = modal.querySelector('#appModalCancel');
+
+                titleEl.textContent = title;
+                textEl.textContent = text;
+                iconEl.textContent = icon === 'warning' ? '⚠️' : icon === 'error' ? '❌' : icon === 'success' ? '✅' : 'ℹ️';
+                confirmBtn.textContent = confirmButtonText;
+                confirmBtn.style.background = confirmButtonColor;
+                cancelBtn.textContent = cancelButtonText;
+
+                if (showCancelButton) {
+                    cancelBtn.classList.remove('hidden');
+                } else {
+                    cancelBtn.classList.add('hidden');
+                }
+
+                const cleanup = () => {
+                    modal.classList.add('hidden');
+                    confirmBtn.onclick = null;
+                    cancelBtn.onclick = null;
+                };
+
+                modal.classList.remove('hidden');
+
+                confirmBtn.onclick = () => {
+                    cleanup();
+                    resolve({ isConfirmed: true });
+                };
+                cancelBtn.onclick = () => {
+                    cleanup();
+                    resolve({ isConfirmed: false });
+                };
+            });
+        }
+
+        // Check if coming from study or quiz pages
+        const params = new URLSearchParams(window.location.search);
+        const urlFrom = params.get('from');
+        const sessionFrom = sessionStorage.getItem('fromPage');
+        const isFromStudyOrQuiz = urlFrom === 'study' || urlFrom === 'quiz' || sessionFrom === 'study' || sessionFrom === 'quiz';
+        
+        // Clear the sessionStorage flag after using it
+        if (sessionFrom) {
+            sessionStorage.removeItem('fromPage');
+        }
+        
+        // If not coming from study/quiz, clear saved selections (for refresh)
+        if (!isFromStudyOrQuiz) {
+            localStorage.removeItem('rtu_selections');
+        }
+        
+        // --- DYNAMIC DROPDOWN LOGIC ---
+        const els = {
+            branch: document.getElementById('branchSelect'),
+            year: document.getElementById('yearSelect'),
+            semester: document.getElementById('semesterSelect'),
+            subject: document.getElementById('subjectSelect')
+        };
+
+        if (window.pdfjsLib) {
+            window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+        }
+
+
+
+
+
+        window.openNotesViewer = function (url, topicId = '', topicName = '', label = 'Study Notes') {
+            const subjName = typeof els !== 'undefined' && els.subject ? els.subject.options[els.subject.selectedIndex]?.text : 'Unknown Subject';
+            const tId = topicId || 'notes-viewer';
+            const tName = topicName || 'Unknown Topic';
+            
+            const viewerUrl = `viewer.html?file=${encodeURIComponent(url)}&label=${encodeURIComponent(label)}&topicId=${encodeURIComponent(tId)}&topicName=${encodeURIComponent(tName)}&subjectName=${encodeURIComponent(subjName)}`;
+            window.open(viewerUrl, '_blank');
+        };
+
+        let syllabusData = { branches: [], semesters: [], subjects: [] };
+
+        // --- Selection Persistence ---
+        const STORAGE_KEY = 'rtu_selections';
+        function saveSelections() {
+            const sel = {
+                branch: els.branch.value,
+                year: els.year.value,
+                semester: els.semester.value,
+                subject: els.subject.value
+            };
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(sel));
+        }
+        function getSavedSelections() {
+            try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch { return {}; }
+        }
+
+        function resetDropdown(element, defaultText) {
+            element.innerHTML = `<option value="">${defaultText}</option>`;
+            element.disabled = true;
+            element.classList.remove('text-white');
+            element.classList.add('text-gray-400');
+        }
+
+        function enableDropdown(element) {
+            element.disabled = false;
+            element.classList.remove('text-gray-400');
+            element.classList.add('text-white');
+        }
+
+        // ── Splash screen dismiss helper ──
+        const _splashStart = Date.now();
+        function dismissSplash(immediate = false) {
+            const el = document.getElementById('splashScreen');
+            if (!el || el.classList.contains('splash-exit')) return;
+            const elapsed = Date.now() - _splashStart;
+            const MIN_DISPLAY = immediate ? 0 : 2000; // show for at least 2 s unless immediate
+            const delay = Math.max(0, MIN_DISPLAY - elapsed);
+            setTimeout(() => {
+                const bar = document.getElementById('splashProgressBar');
+                if (bar) { bar.style.animation = 'none'; bar.style.width = '100%'; }
+                const txt = document.getElementById('splashStatusText');
+                if (txt) txt.textContent = 'Ready';
+                setTimeout(() => {
+                    el.classList.add('splash-exit');
+                    setTimeout(() => el.remove(), 700);
+                }, 350);
+            }, delay);
+        }
+
+        async function loadSyllabus() {
+            if (isFromStudyOrQuiz) {
+                dismissSplash(true);
+            }
+            
+            try {
+                // Try to load from cache first
+                const cached = localStorage.getItem('syllabus_metadata');
+                if (cached) {
+                    syllabusData = JSON.parse(cached);
+                    renderBranches();
+                    restoreSelections();
+                    if (!isFromStudyOrQuiz) dismissSplash();
+                    // Background fetch to refresh cache
+                    fetchMetadata(); 
+                } else {
+                    await fetchMetadata();
+                    if (!isFromStudyOrQuiz) dismissSplash();
+                    restoreSelections();
+                }
+            } catch (e) {
+                console.error("Initialization error", e);
+                fetchMetadata().then(() => restoreSelections()).finally(() => { if (!isFromStudyOrQuiz) dismissSplash(); }); // Fallback
+            }
+        }
+
+        async function fetchMetadata() {
+            try {
+                const res = await fetch(`${API_BASE}/syllabus-metadata`);
+                if (res.ok) {
+                    syllabusData = await res.json();
+                    localStorage.setItem('syllabus_metadata', JSON.stringify(syllabusData));
+                    renderBranches();
+                }
+            } catch (e) {
+                console.warn("Failed to fetch fresh metadata", e);
+            }
+        }
+
+        function renderBranches() {
+            const currentVal = els.branch.value;
+            els.branch.innerHTML = '<option value="">Select Branch</option>';
+            syllabusData.branches.forEach(b => {
+                els.branch.insertAdjacentHTML('beforeend', `<option value="${b.id}">${b.name}</option>`);
+            });
+            if (currentVal) els.branch.value = currentVal;
+        }
+
+        // --- Restore saved selections after syllabus loads ---
+        function restoreSelections() {
+            const saved = getSavedSelections();
+            if (!saved.branch) return;
+            els.branch.value = saved.branch;
+            els.branch.dispatchEvent(new Event('change'));
+            if (saved.year) {
+                requestAnimationFrame(() => {
+                    els.year.value = saved.year;
+                    els.year.dispatchEvent(new Event('change'));
+                    if (saved.semester) {
+                        requestAnimationFrame(() => {
+                            els.semester.value = saved.semester;
+                            els.semester.dispatchEvent(new Event('change'));
+                            if (saved.subject) {
+                                requestAnimationFrame(() => {
+                                    els.subject.value = saved.subject;
+                                    els.subject.dispatchEvent(new Event('change'));
+                                });
+                            }
+                        });
+                    }
+                });
+            }
+        }
+
+        els.branch.addEventListener('change', (e) => {
+            const val = e.target.value;
+            resetDropdown(els.year, 'Select Year');
+            resetDropdown(els.semester, 'Select Semester');
+            resetDropdown(els.subject, 'Select Subject');
+            document.getElementById('actionHubContainer').classList.add('hidden');
+
+            if (val) {
+                const branchSems = syllabusData.semesters.filter(s => s.branch_id == val);
+                const years = [...new Set(branchSems.map(s => s.year))].sort();
+                years.forEach(y => els.year.insertAdjacentHTML('beforeend', `<option value="${y}">Year ${y}</option>`));
+                enableDropdown(els.year);
+            }
+            saveSelections();
+        });
+
+        els.year.addEventListener('change', (e) => {
+            const val = e.target.value;
+            const branchId = els.branch.value;
+            resetDropdown(els.semester, 'Select Semester');
+            resetDropdown(els.subject, 'Select Subject');
+
+            if (val && branchId) {
+                const filteredSems = syllabusData.semesters.filter(s => s.branch_id == branchId && s.year == val);
+                filteredSems.forEach(s => els.semester.insertAdjacentHTML('beforeend', `<option value="${s.id}">Semester ${s.semester_number}</option>`));
+                enableDropdown(els.semester);
+            }
+            saveSelections();
+        });
+
+        els.semester.addEventListener('change', (e) => {
+            const val = e.target.value;
+            resetDropdown(els.subject, 'Select Subject');
+
+            if (val) {
+                const filteredSubjects = syllabusData.subjects.filter(s => s.semester_id == val);
+                filteredSubjects.forEach(s => els.subject.insertAdjacentHTML('beforeend', `<option value="${s.id}">${s.name} (${s.subject_code})</option>`));
+                enableDropdown(els.subject);
+            }
+            saveSelections();
+        });
+
+        els.subject.addEventListener('change', async (e) => {
+            const val = e.target.value;
+            const container = document.getElementById('actionHubContainer');
+            container.innerHTML = '';
+            container.classList.add('hidden');
+
+            if (val) {
+                document.getElementById('loadingStatus').innerText = 'Loading Action Hub...';
+                document.getElementById('loadingStatus').classList.remove('hidden');
+                try {
+                    const [topicsRes, pyqsRes] = await Promise.all([
+                        fetch(`${API_BASE}/topics/${val}`),
+                        fetch(`${API_BASE}/pyqs/${val}`)
+                    ]);
+
+                    let topics = await topicsRes.json();
+                    let pyqs = await pyqsRes.json();
+
+                    renderActionHub(topics || [], pyqs || []);
+                    container.classList.remove('hidden');
+                } catch (err) {
+                    console.error("Failed loading action hub data", err);
+                } finally {
+                    document.getElementById('loadingStatus').classList.add('hidden');
+                }
+            }
+            saveSelections();
+        });
+
+        function renderActionHub(topics, pyqs) {
+            const container = document.getElementById('actionHubContainer');
+
+            let pyqsHTML = '';
+            let pyqPills = '';
+            if (pyqs && pyqs.length > 0) {
+                pyqPills = pyqs.map(p => `
+                    <button onclick="openNotesViewer('${p.pdf_link.replace(/'/g, "\\'")}', 'pyq-${p.id}', 'PYQ ${p.year}', 'Previous Year Paper')" class="bg-gray-700 hover:bg-red-600 border border-gray-600 hover:border-red-500 text-gray-200 hover:text-white px-4 py-2 rounded-full text-sm font-semibold inline-flex items-center transition-all shadow-md">
+                        <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2-2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"></path></svg>
+                        Year ${p.year}
+                    </button>
+                `).join('');
+
+                pyqsHTML = `
+                    <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-xl mb-8">
+                        <h2 class="text-xl font-bold text-white mb-4 flex items-center">
+                            <svg class="w-6 h-6 mr-2 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477-4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                            Previous Year Papers (PYQs)
+                        </h2>
+                        <div class="flex flex-wrap gap-3">
+                            ${pyqPills}
+                        </div>
+                    </div>
+                `;
+            }
+
+            const topicsHTML = topics.map(t => `
+                <div class="bg-gray-900 border border-gray-700 p-4 rounded-lg flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition hover:border-blue-500/50">
+                    <div class="flex-1">
+                        <span class="text-xs font-bold text-blue-400 uppercase tracking-widest">Unit ${t.unit_number}</span>
+                        <h4 class="text-lg font-bold text-white">${t.topic_name}</h4>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        ${t.youtube_link ? `
+                            <a href="${t.youtube_link}" target="_blank" class="flex flex-col items-center gap-1 px-3 py-2 bg-red-600/20 text-red-400 hover:bg-red-600 hover:text-white rounded-lg transition" title="Video Lecture">
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                                <span class="text-[10px] font-bold uppercase tracking-wider">Video</span>
+                            </a>
+                        ` : ''}
+                        ${t.notes_link ? `
+                            <button onclick="openNotesViewer('${t.notes_link.replace(/'/g, "\\'")}', '${t.id}', '${t.topic_name.replace(/'/g, "\\'")}', 'Study Notes')" class="flex flex-col items-center gap-1 px-3 py-2 bg-blue-600/20 text-blue-400 hover:bg-blue-600 hover:text-white rounded-lg transition" title="Study Notes">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                                <span class="text-[10px] font-bold uppercase tracking-wider">Notes</span>
+                            </button>
+                        ` : ''}
+                        <button onclick="generateStudyPlan('${t.id}', '${t.topic_name.replace(/'/g, "\\'")}')" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded font-bold shadow-lg transition text-sm flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                            Study with AI
+                        </button>
+                        <button onclick="openCustomQuizModal('${t.id}', '${t.topic_name.replace(/'/g, "\\'")}')" class="bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded font-bold shadow-lg shadow-purple-500/30 transition text-sm flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            Custom Quiz
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+
+            container.innerHTML = `
+                ${pyqsHTML}
+                <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-xl flex flex-col">
+                    <div class="flex justify-between items-center mb-6 pb-2 border-b border-gray-700">
+                        <h2 class="text-2xl font-bold text-white">Topic Dashboard</h2>
+                        <button id="toggleTopicsBtn" onclick="toggleTopics()" class="text-gray-400 hover:text-white text-sm font-medium flex items-center transition group">
+                            <span id="toggleTopicsText">Collapse Units</span>
+                            <span id="toggleRotateWrap" class="rotate-wrapper ml-1">
+                                <svg class="w-4 h-4 bounce-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </span>
+                        </button>
+                    </div>
+                    <div id="unitListContainer" class="space-y-3 transition-opacity duration-300">
+                        ${topicsHTML}
+                    </div>
+                </div>
+            `;
+        }
+
+        window.toggleTopics = function (forceCollapse = false) {
+            const container = document.getElementById('unitListContainer');
+            const rotateWrap = document.getElementById('toggleRotateWrap');
+            const text = document.getElementById('toggleTopicsText');
+
+            if (forceCollapse || !container.classList.contains('hidden')) {
+                container.classList.add('hidden');
+                if (rotateWrap) rotateWrap.classList.add('collapsed');
+                text.innerText = 'Expand Units';
+            } else {
+                container.classList.remove('hidden');
+                if (rotateWrap) rotateWrap.classList.remove('collapsed');
+                text.innerText = 'Collapse Units';
+            }
+        };
+
+        loadSyllabus();
+
+        // --- POMODORO TIMER LOGIC ---
+        let timerInterval;
+        let expectedEndTime;
+        let currentFocusTopicId = null;
+        let currentFocusDuration = 0;
+
+        async function trackSessionStats(status) {
+            if (!currentFocusDuration || !currentFocusTopicId) return;
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (session) {
+                try {
+                    await fetch(`${API_BASE}/submit-focus-session`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+                        body: JSON.stringify({ 
+                            topic_id: currentFocusTopicId, 
+                            duration_minutes: currentFocusDuration, 
+                            status: status 
+                        })
+                    });
+                } catch(e) { console.error('Session track err:', e); }
+            }
+        }
+
+        window.startPomodoro = function (durationMinutes, title, topicId) {
+            currentFocusTopicId = topicId;
+            currentFocusDuration = durationMinutes;
+            document.getElementById('focusTitle').innerText = title;
+            document.getElementById('sessionCompleteMsg').classList.add('hidden');
+            document.getElementById('timerControls').classList.remove('hidden');
+
+            const initialSeconds = durationMinutes * 60;
+            updateTimerDisplay(initialSeconds);
+
+            document.getElementById('focusOverlay').classList.remove('hidden');
+            document.getElementById('focusOverlay').classList.add('flex');
+
+            expectedEndTime = Date.now() + (durationMinutes * 60 * 1000) + 500;
+
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(tickTimer, 200);
+        }
+
+        function tickTimer() {
+            const now = Date.now();
+            const timeRemainingMs = expectedEndTime - now;
+
+            if (timeRemainingMs <= 0) {
+                clearInterval(timerInterval);
+                updateTimerDisplay(0);
+                completeSession();
+                return;
+            }
+
+            const secondsRemaining = Math.max(0, Math.floor(timeRemainingMs / 1000));
+            updateTimerDisplay(secondsRemaining);
+        }
+
+        function updateTimerDisplay(totalSeconds) {
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+            const minStr = String(minutes).padStart(2, '0');
+            const secStr = String(seconds).padStart(2, '0');
+            document.getElementById('timerDisplay').innerText = `${minStr}:${secStr}`;
+        }
+
+        function completeSession() {
+            document.getElementById('timerControls').classList.add('hidden');
+            document.getElementById('sessionCompleteMsg').classList.remove('hidden');
+            trackSessionStats('completed');
+        }
+
+        window.abandonSession = function () {
+            if (confirm("Are you sure you want to abandon this focus session? Progress won't be saved.")) {
+                trackSessionStats('abandoned');
+                closeFocusOverlay();
+            }
+        }
+
+        window.closeFocusOverlay = function () {
+            if (timerInterval) clearInterval(timerInterval);
+            document.getElementById('focusOverlay').classList.add('hidden');
+            document.getElementById('focusOverlay').classList.remove('flex');
+        }
+
+        // --- CUSTOM QUIZ LOGIC ---
+        let currentCustomQuizContext = null;
+
+        window.openCustomQuizModal = function (topicId, topicName) {
+            currentCustomQuizContext = { topicId, topicName };
+            document.getElementById('customQuizTopicName').innerText = `Topic: ${topicName}`;
+            document.getElementById('customQuizModal').classList.remove('hidden');
+            document.getElementById('customQuizModal').classList.add('flex');
+        };
+
+        window.closeCustomQuizModal = function () {
+            document.getElementById('customQuizModal').classList.add('hidden');
+            document.getElementById('customQuizModal').classList.remove('flex');
+            currentCustomQuizContext = null;
+        };
+
+        window.submitCustomQuiz = function () {
+            if (!currentCustomQuizContext) return;
+            const { topicId, topicName } = currentCustomQuizContext;
+            let numQuestions = Math.min(30, Math.max(1, parseInt(document.getElementById('quizNumQuestions').value) || 8));
+            const difficulty = document.getElementById('quizDifficulty').value;
+            let timePerQuestion = Math.max(10, parseInt(document.getElementById('quizTimePerQuestion').value) || 60);
+            const subjectName = els.subject.options[els.subject.selectedIndex].text;
+
+            closeCustomQuizModal();
+
+            const params = new URLSearchParams({
+                topicId, topicName, subjectName,
+                numQuestions, difficulty, timePerQuestion
+            });
+            window.location.href = `quiz.html?${params.toString()}`;
+        };
+
+        window.generateStudyPlan = function (topicId, topicName) {
+            const subjectName = els.subject.options[els.subject.selectedIndex].text;
+            const subjectId = els.subject.value;
+
+            const params = new URLSearchParams({
+                topicId, topicName, subjectName, subjectId
+            });
+            window.location.href = `study.html?${params.toString()}`;
+        };
+
+        // --- AUTH & BYOK LOGIC ---
+        // Set your own values in https://github.com/<your-repo>/blob/main/.env.example and in your deployment secrets.
+        const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+        const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+        
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        async function checkAuthState() {
+            await loadRateLimitConfig();
+            applyRateLimitConfigToUi();
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const openSettings = urlParams.get('openSettings') === 'true';
+
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            const loginBtn = document.getElementById('loginBtn');
+            const userMenu = document.getElementById('userMenu');
+            const guestLimitsBadge = document.getElementById('guestLimitsBadge');
+
+            if (session) {
+                loginBtn.classList.add('hidden');
+                guestLimitsBadge.classList.add('hidden');
+                userMenu.classList.remove('hidden');
+
+                const user = session.user;
+                const name = user.user_metadata?.full_name || user.email.split('@')[0];
+                document.getElementById('userNameDisplay').innerText = name;
+                document.getElementById('userInitial').innerText = name.charAt(0).toUpperCase();
+
+                const limitsRes = await fetch(`${API_BASE}/my-limits`, {
+                    headers: {
+                        'Authorization': `Bearer ${session.access_token}`
+                    }
+                });
+                const profile = limitsRes.ok ? await limitsRes.json() : null;
+                if (profile) {
+                    document.getElementById('apiLimitsDisplay').innerText = profile.gemini_remaining ?? 0;
+                    document.getElementById('groqLimitsDisplay').innerText = profile.groq_remaining ?? 0;
+
+                    // PROACTIVE CHECK: If both are 0, prompt to upgrade/BYOK
+                    if ((profile.gemini_remaining ?? 0) === 0 && (profile.groq_remaining ?? 0) === 0) {
+                        showDialog({
+                            title: 'Daily Limit Reached',
+                            text: profile.auth_limit_message || rateLimitConfig.auth_limit_message,
+                            icon: 'info',
+                            showCancelButton: true,
+                            confirmButtonText: 'Open Settings',
+                            cancelButtonText: 'Maybe Later',
+                            confirmButtonColor: '#3b82f6'
+                        }).then((result) => {
+                            if (result.isConfirmed) openSettingsModal();
+                        });
+                    }
+                }
+
+                if (openSettings) {
+                    openSettingsModal();
+                }
+            } else {
+                loginBtn.classList.remove('hidden');
+                guestLimitsBadge.classList.remove('hidden');
+                userMenu.classList.add('hidden');
+
+                try {
+                    const res = await fetch(`${API_BASE}/guest-limits`);
+                    if (res.ok) {
+                        const limits = await res.json();
+                        document.getElementById('guestGemini').innerText = limits.gemini_remaining;
+                        document.getElementById('guestGroq').innerText = limits.groq_remaining;
+
+                        // PROACTIVE CHECK: If both are 0, prompt for login
+                        if (limits.gemini_remaining === 0 && limits.groq_remaining === 0) {
+                            showDialog({
+                                title: 'Daily Limit Reached',
+                                text: limits.guest_upgrade_message || rateLimitConfig.guest_upgrade_message,
+                                icon: 'warning',
+                                showCancelButton: true,
+                                confirmButtonText: 'Login / Sign Up',
+                                cancelButtonText: 'Maybe Later',
+                                confirmButtonColor: '#3b82f6'
+                            }).then((result) => {
+                                if (result.isConfirmed) openAuthModal();
+                            });
+                        }
+                    }
+                } catch (err) {}
+            }
+        }
+
+        window.openAuthModal = function () {
+            document.getElementById('authModal').classList.remove('hidden');
+            document.getElementById('authModal').classList.add('flex');
+        }
+
+        window.closeAuthModal = function () {
+            document.getElementById('authModal').classList.add('hidden');
+            document.getElementById('authModal').classList.remove('flex');
+        }
+
+        window.signInWithGoogle = async function () {
+            try {
+                const { data, error } = await supabaseClient.auth.signInWithOAuth({
+                    provider: 'google',
+                    options: { redirectTo: window.location.origin }
+                });
+                if (error) throw error;
+            } catch (error) {
+                showToast(`Authentication Failed: ${error.message}`, 'error');
+            }
+        }
+
+        window.signOut = async function () {
+            await supabaseClient.auth.signOut();
+            checkAuthState();
+            showToast('Signed out', 'success');
+        }
+        
+        // BYOK Settings Functions
+        window.openSettingsModal = function () {
+            document.getElementById('settingsModal').classList.remove('hidden');
+            document.getElementById('settingsModal').classList.add('flex');
+        }
+
+        window.closeSettingsModal = function () {
+            document.getElementById('settingsModal').classList.add('hidden');
+            document.getElementById('settingsModal').classList.remove('flex');
+        }
+
+        window.saveApiKey = async function () {
+            const key = document.getElementById('customApiKeyInput').value.trim();
+            if (!key) {
+                showToast('Please enter an API key.', 'error');
+                return;
+            }
+            await submitApiKey(key);
+        }
+
+        window.clearApiKey = async function () {
+            document.getElementById('customApiKeyInput').value = '';
+            await submitApiKey('');
+        }
+
+        async function submitApiKey(key) {
+            const btn = document.getElementById('saveKeyBtn');
+            const originalText = btn.innerText;
+            btn.disabled = true;
+            btn.innerText = 'Saving...';
+
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            
+            try {
+                const response = await fetch(`${API_BASE}/update-api-key`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${session.access_token}`
+                    },
+                    body: JSON.stringify({ api_key: key })
+                });
+
+                if (!response.ok) {
+                    const errData = await response.json();
+                    throw new Error(errData.detail || 'Failed to save key');
+                }
+
+                showToast(key ? 'Key Saved! You now have unlimited AI generations.' : 'Key Removed. Reverted to default limits.', 'success');
+                closeSettingsModal();
+            } catch (error) {
+                showToast(`Error: ${error.message}`, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        }
+
+        window.openStatsModal = function () {
+            document.getElementById('statsModal').classList.remove('hidden');
+            document.getElementById('statsModal').classList.add('flex');
+            loadUserStats();
+        };
+
+        window.closeStatsModal = function () {
+            document.getElementById('statsModal').classList.add('hidden');
+            document.getElementById('statsModal').classList.remove('flex');
+        };
+
+        async function loadUserStats() {
+            const tableBody = document.getElementById('statsTableBody');
+            const quizzesEl = document.getElementById('totalQuizzesValue');
+            const completedEl = document.getElementById('completedSessionsValue');
+            const failedEl = document.getElementById('failedSessionsValue');
+            
+            // Lightweight loading state for stats
+            quizzesEl.innerText = '—';
+            completedEl.innerText = '—';
+            failedEl.innerText = '—';
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="3" class="px-4 py-6 text-center text-gray-500 text-sm">
+                        Loading your progress from the server…
+                    </td>
+                </tr>
+            `;
+            
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (!session) return;
+
+            try {
+                const res = await fetch(`${API_BASE}/user-stats`, {
+                    headers: { 'Authorization': `Bearer ${session.access_token}` }
+                });
+                if (res.ok) {
+                    const stats = await res.json();
+                    quizzesEl.innerText = stats.total_quizzes_taken;
+                    completedEl.innerText = stats.completed_focus_sessions || 0;
+                    failedEl.innerText = stats.failed_focus_sessions || 0;
+
+                    if (stats.recent_scores && stats.recent_scores.length > 0) {
+                        tableBody.innerHTML = stats.recent_scores.map(s => {
+                            const date = new Date(s.created_at).toLocaleDateString();
+                            const topicName = s.topics ? s.topics.topic_name : 'Unknown Topic';
+                            return `
+                                <tr class="hover:bg-gray-800/50 transition">
+                                    <td class="px-4 py-3 font-medium truncate max-w-[180px]" title="${topicName}">${topicName}</td>
+                                    <td class="px-4 py-3 text-center"><span class="bg-gray-800 border border-gray-700 px-2 py-0.5 rounded text-blue-400 font-bold font-mono">${s.score}/${s.total_questions}</span></td>
+                                    <td class="px-4 py-3 text-right text-gray-500 text-[10px] font-bold">${date}</td>
+                                </tr>
+                            `;
+                        }).join('');
+                    } else {
+                        tableBody.innerHTML = `<tr><td colspan="3" class="px-4 py-8 text-center text-gray-500 italic">No scores yet. Take a quiz to start!</td></tr>`;
+                    }
+                } else {
+                    tableBody.innerHTML = `<tr><td colspan="3" class="px-4 py-8 text-center text-red-400 text-sm">Failed to load stats. Please try again.</td></tr>`;
+                }
+            } catch (err) {
+                console.warn("Stats load error", err);
+                tableBody.innerHTML = `<tr><td colspan="3" class="px-4 py-8 text-center text-red-400 text-sm">Failed to load stats. Please try again.</td></tr>`;
+            }
+        }
+
+        supabaseClient.auth.onAuthStateChange((event, session) => {
+            if (event === 'SIGNED_IN') {
+                checkAuthState();
+                window.history.replaceState(null, null, window.location.pathname);
+            }
+        });
+        checkAuthState();
+
+        // Auto-open auth modal if requested via URL
+        if (new URLSearchParams(window.location.search).get('auth') === 'true') {
+            openAuthModal();
+        }
+    </script>
+</body>
+</html>

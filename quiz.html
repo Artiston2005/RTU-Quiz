@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Custom Quiz — RTUKaGyan</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="dns-prefetch" href="https://bcijwutbbhxhhypicmvc.supabase.co">
+    <link href="assets/style.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+
+<body class="bg-rtu-bg text-gray-100 font-sans min-h-screen flex flex-col relative overflow-x-hidden">
+
+    <div aria-hidden="true" class="pointer-events-none fixed inset-0 -z-10">
+        <div class="absolute -top-40 -right-24 h-72 w-72 rounded-full bg-rtu-accent-soft blur-3xl opacity-80"></div>
+        <div class="absolute -bottom-40 -left-24 h-72 w-72 rounded-full bg-purple-700/30 blur-3xl opacity-70"></div>
+        <div
+            class="absolute inset-x-0 top-28 mx-auto h-px w-[90%] max-w-4xl bg-gradient-to-r from-transparent via-slate-700/70 to-transparent">
+        </div>
+    </div>
+
+    <header
+        class="bg-slate-900/70 border-b border-slate-800 backdrop-blur-xl px-4 md:px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <img src="assets/favicon.webp" alt="Logo" class="w-9 h-9 object-contain drop-shadow-lg cursor-pointer"
+                onerror="this.style.display='none'"
+                onclick="sessionStorage.setItem('fromPage', 'quiz'); window.location.href = 'index.html?from=quiz';">
+            <div class="cursor-pointer"
+                onclick="sessionStorage.setItem('fromPage', 'quiz'); window.location.href = 'index.html?from=quiz';">
+                <h1
+                    class="text-xl md:text-2xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-sky-400 via-rtu-accent to-fuchsia-400 pb-0.5">
+                    RTUKaGyan
+                </h1>
+                <p class="text-[10px] text-slate-400 uppercase tracking-[0.22em] font-semibold">
+                    Adaptive Quiz Workspace
+                </p>
+            </div>
+        </div>
+        <button id="quitBtn" onclick="quitQuiz()"
+            class="bg-red-500/10 hover:bg-red-500/80 text-red-300 hover:text-white border border-red-500/40 px-4 py-2 rounded-full font-semibold text-xs md:text-sm transition-all flex items-center gap-2 shadow-sm hover:shadow-red-900/50">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+            Quit Quiz
+        </button>
+    </header>
+
+    <div class="bg-slate-900/60 border-b border-slate-800/80 px-4 md:px-6 py-3">
+        <div class="max-w-3xl mx-auto flex flex-wrap items-center justify-between gap-3">
+            <div>
+                <p id="quizTopicLabel" class="text-sm md:text-base font-semibold text-slate-50"></p>
+                <p id="quizMeta" class="text-xs text-slate-400"></p>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="text-center">
+                    <p class="text-[10px] text-slate-500 uppercase font-bold tracking-[0.22em]">Score</p>
+                    <p id="scoreDisplay" class="text-lg font-extrabold text-emerald-300">0</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-[10px] text-slate-500 uppercase font-bold tracking-[0.22em]">Timer</p>
+                    <p id="timerDisplay" class="text-lg font-extrabold text-amber-300">--:--</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-transparent px-4 md:px-6 pt-4">
+        <div class="max-w-3xl mx-auto">
+            <div class="flex justify-between text-[11px] text-slate-400 mb-1">
+                <span id="progressLabel">Question 1 / ?</span>
+                <span id="progressPercent">0%</span>
+            </div>
+            <div class="w-full bg-slate-900/80 rounded-full h-2 overflow-hidden backdrop-blur">
+                <div id="progressBar"
+                    class="bg-gradient-to-r from-rtu-accent via-sky-400 to-emerald-400 h-2 rounded-full transition-all duration-500"
+                    style="width: 0%"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="loadingState" class="flex-1 flex flex-col items-center justify-center p-8 text-center space-y-3">
+        <div class="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+        <p id="loadingText" class="text-slate-300 text-sm font-medium">Loading questions…</p>
+        <p class="text-[11px] text-slate-500 max-w-sm">
+            First time on a topic, RTUKaGyan generates and caches fresh AI questions.
+            This can take <span class="font-semibold text-slate-300">10–25 seconds</span> depending on load.
+        </p>
+        <button onclick="sessionStorage.setItem('fromPage', 'quiz'); window.location.href = 'index.html?from=quiz';"
+            class="mt-4 bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white px-4 py-2 rounded-full font-medium text-sm transition">
+            Cancel & Go Back
+        </button>
+    </div>
+
+    <div id="questionCard" class="flex-1 hidden px-4 md:px-6 pb-6 pt-2 md:pt-4">
+        <div class="max-w-3xl mx-auto fade-in space-y-5" id="questionInner">
+            <div class="bg-rtu-card border border-rtu-border rounded-3xl p-5 md:p-6 shadow-rtu-elevated glow-pulse">
+                <p id="questionText" class="text-lg md:text-xl font-semibold text-slate-50 leading-relaxed"></p>
+            </div>
+            <div id="optionsContainer" class="space-y-3 mb-6"></div>
+            <div id="explanationBox"
+                class="hidden bg-slate-900/80 border-l-4 border-rtu-accent rounded-r-2xl p-4 text-sm text-slate-200 leading-relaxed shadow-inner mb-4">
+                <span class="font-semibold text-rtu-accent uppercase tracking-[0.18em] text-[11px] block mb-1.5">AI
+                    Explanation</span>
+                <p id="explanationText"></p>
+            </div>
+            <button id="nextBtn" onclick="nextQuestion()"
+                class="hidden w-full bg-rtu-accent hover:bg-indigo-500 text-white py-3 rounded-full font-semibold text-sm md:text-base shadow-lg shadow-rtu-accent/40 transition-all hover:-translate-y-0.5">
+                Next Question →
+            </button>
+        </div>
+    </div>
+
+    <div id="resultsScreen" class="flex-1 hidden flex-col items-center justify-center px-4 md:px-6 py-8">
+        <div
+            class="max-w-md w-full text-center bg-rtu-card border border-rtu-border rounded-3xl p-7 md:p-8 shadow-rtu-elevated">
+            <div class="text-6xl mb-4">🎯</div>
+            <h2 class="text-2xl md:text-3xl font-extrabold text-slate-50 mb-2">Quiz Complete!</h2>
+            <p id="resultScore" class="text-lg md:text-xl text-purple-300 font-semibold mb-6"></p>
+            <div id="resultBreakdown"
+                class="text-left bg-slate-950/70 rounded-2xl p-4 mb-6 text-sm space-y-1 border border-slate-800/80">
+            </div>
+            <a href="#"
+                onclick="event.preventDefault(); sessionStorage.setItem('fromPage', 'quiz'); window.location.href = 'index.html?from=quiz';"
+                class="block w-full bg-rtu-accent hover:bg-indigo-500 text-white py-3 rounded-full font-semibold text-sm md:text-base shadow-lg shadow-rtu-accent/40 transition-all text-center hover:-translate-y-0.5">
+                ← Back to Portal
+            </a>
+        </div>
+    </div>
+
+    <footer class="max-w-4xl mx-auto mt-auto pt-10 pb-7 w-full border-t border-slate-800/60">
+        <div
+            class="bg-slate-900/60 border border-slate-800/80 rounded-2xl md:rounded-3xl p-6 md:p-7 text-center flex flex-col justify-center max-w-md mx-auto">
+            <p class="text-[11px] text-slate-500 uppercase tracking-[0.24em] mb-3 font-semibold">Developed by</p>
+            <img src="assets/ashwin_profile.webp" alt="Ashwin Yadav"
+                class="w-14 h-14 md:w-16 md:h-16 rounded-full mx-auto mb-3 object-cover border border-slate-600 shadow-lg shadow-slate-900/80"
+                loading="lazy" onerror="this.style.display='none'">
+            <h3 class="text-base md:text-lg font-semibold text-slate-50 mb-1">Ashwin Yadav</h3>
+            <div class="flex items-center justify-center gap-4 mt-2">
+                <a href="https://github.com/Artiston2005" target="_blank" rel="noopener noreferrer"
+                    class="inline-flex items-center justify-center rounded-full h-9 w-9 border border-slate-700/70 bg-slate-900/80 text-slate-300 hover:text-white hover:border-rtu-accent hover:bg-rtu-accent/10 transition"
+                    title="GitHub">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path
+                            d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+                    </svg>
+                </a>
+                <a href="https://www.linkedin.com/in/ashwin-yadav-1704a1248" target="_blank" rel="noopener noreferrer"
+                    class="inline-flex items-center justify-center rounded-full h-9 w-9 border border-slate-700/70 bg-slate-900/80 text-slate-300 hover:text-sky-400 hover:border-sky-500 hover:bg-slate-900/60 transition"
+                    title="LinkedIn">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path
+                            d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
+                    </svg>
+                </a>
+                <a href="mailto:ashwinyadav2408@gmail.com"
+                    class="inline-flex items-center justify-center rounded-full h-9 w-9 border border-slate-700/70 bg-slate-900/80 text-slate-300 hover:text-rose-300 hover:border-rose-500 hover:bg-rose-500/10 transition"
+                    title="Email">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z">
+                        </path>
+                    </svg>
+                </a>
+            </div>
+        </div>
+        <p class="text-[11px] text-slate-500 mt-6 text-center">© 2026 <span
+                class="font-semibold text-white">RTUKagyan</span> By Ashwin Yadav. All rights reserved.</p>
+    </footer>
+
+    <script>
+        const API_BASE = '';
+        const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+        const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+        let rateLimitConfig = {
+            auth_gemini_limit: 15,
+            auth_groq_limit: 20,
+            guest_gemini_limit: 3,
+            guest_groq_limit: 5,
+            auth_total_limit: 35,
+            guest_upgrade_message: "You've exhausted your free guest generations. Sign in to get 35 daily credits!",
+            auth_limit_message: "Daily Limits Reached. Come back tomorrow or add your own API Key in Settings!"
+        };
+
+        async function loadRateLimitConfig() {
+            try {
+                const res = await fetch(`${API_BASE}/rate-limit-settings`);
+                if (!res.ok) return rateLimitConfig;
+                const data = await res.json();
+                rateLimitConfig = { ...rateLimitConfig, ...data };
+            } catch (err) {
+                console.warn('Failed to load rate limit config', err);
+            }
+            return rateLimitConfig;
+        }
+
+        // Set sessionStorage when navigating away (for back button, etc.)
+        window.addEventListener('beforeunload', () => {
+            sessionStorage.setItem('fromPage', 'quiz');
+        });
+
+        // --- Custom Modal / Toast Helper (replaces SweetAlert) ---
+        function showToast(message, type = 'info', duration = 2500) {
+            const colors = {
+                info: 'bg-rtu-accent text-white',
+                success: 'bg-emerald-500 text-white',
+                warning: 'bg-amber-400 text-slate-900',
+                error: 'bg-rose-500 text-white'
+            };
+            const wrapper = document.createElement('div');
+            wrapper.className = `fixed top-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg shadow-black/40 border border-white/10 bg-opacity-90 ${colors[type] || colors.info}`;
+            wrapper.style.minWidth = '240px';
+            wrapper.style.backdropFilter = 'blur(12px)';
+            wrapper.style.zIndex = '110';
+            wrapper.innerHTML = `<span class="font-semibold">${message}</span>`;
+            document.body.appendChild(wrapper);
+            setTimeout(() => {
+                wrapper.classList.add('opacity-0');
+                setTimeout(() => wrapper.remove(), 200);
+            }, duration);
+        }
+
+        function showDialog({ title = '', text = '', icon = 'info', showCancelButton = false, confirmButtonText = 'OK', cancelButtonText = 'Cancel', confirmButtonColor = '#3b82f6' }) {
+            return new Promise((resolve) => {
+                let modal = document.getElementById('appModal');
+                if (!modal) {
+                    modal = document.createElement('div');
+                    modal.id = 'appModal';
+                    modal.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4 py-6';
+                    modal.style.zIndex = '100';
+                    modal.innerHTML = `
+                        <div class="w-full max-w-md bg-slate-900/80 border border-slate-800/60 rounded-3xl shadow-2xl p-6 text-left" style="backdrop-filter: blur(16px);">
+                            <div class="flex items-start gap-4 mb-4">
+                                <div id="appModalIcon" class="w-10 h-10 rounded-full flex items-center justify-center bg-slate-800 text-white text-xl"></div>
+                                <div class="flex-1">
+                                    <h2 id="appModalTitle" class="text-lg font-bold text-white mb-1"></h2>
+                                    <p id="appModalText" class="text-sm text-slate-200"></p>
+                                </div>
+                            </div>
+                            <div class="mt-6 flex justify-end gap-3">
+                                <button id="appModalCancel" class="px-4 py-2 rounded-full bg-slate-800 text-slate-200 hover:bg-slate-700 transition hidden">Cancel</button>
+                                <button id="appModalConfirm" class="px-4 py-2 rounded-full text-white" style="background:${confirmButtonColor};">OK</button>
+                            </div>
+                        </div>
+                    `;
+                    document.body.appendChild(modal);
+                }
+
+                const titleEl = modal.querySelector('#appModalTitle');
+                const textEl = modal.querySelector('#appModalText');
+                const iconEl = modal.querySelector('#appModalIcon');
+                const confirmBtn = modal.querySelector('#appModalConfirm');
+                const cancelBtn = modal.querySelector('#appModalCancel');
+
+                titleEl.textContent = title;
+                textEl.textContent = text;
+                iconEl.textContent = icon === 'warning' ? '⚠️' : icon === 'error' ? '❌' : icon === 'success' ? '✅' : 'ℹ️';
+                confirmBtn.textContent = confirmButtonText;
+                confirmBtn.style.background = confirmButtonColor;
+                cancelBtn.textContent = cancelButtonText;
+
+                if (showCancelButton) {
+                    cancelBtn.classList.remove('hidden');
+                } else {
+                    cancelBtn.classList.add('hidden');
+                }
+
+                const cleanup = () => {
+                    modal.classList.add('hidden');
+                    confirmBtn.onclick = null;
+                    cancelBtn.onclick = null;
+                };
+
+                modal.classList.remove('hidden');
+
+                confirmBtn.onclick = () => {
+                    cleanup();
+                    resolve({ isConfirmed: true });
+                };
+                cancelBtn.onclick = () => {
+                    cleanup();
+                    resolve({ isConfirmed: false });
+                };
+            });
+        }
+
+        // XSS sanitization helper
+        function sanitize(str) {
+            const d = document.createElement('div');
+            d.textContent = str;
+            return d.innerHTML;
+        }
+
+        // RENAMED
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // --- Parse URL Params ---
+        const params = new URLSearchParams(window.location.search);
+        const CONFIG = {
+            topicId: params.get('topicId'),
+            topicName: params.get('topicName') || 'Unknown Topic',
+            subjectName: params.get('subjectName') || 'Unknown Subject',
+            numQuestions: Math.min(30, Math.max(1, parseInt(params.get('numQuestions')) || 8)),
+            difficulty: params.get('difficulty') || 'Medium',
+            timePerQuestion: Math.max(10, parseInt(params.get('timePerQuestion')) || 60),
+        };
+        CONFIG.totalTime = CONFIG.numQuestions * CONFIG.timePerQuestion;
+
+        // --- State ---
+        let questions = [];
+        let currentIndex = 0;
+        let score = 0;
+        let answered = false;
+        let timerInterval = null;
+        let timeRemaining = CONFIG.totalTime;
+
+        // --- Init UI ---
+        const totalMin = Math.floor(CONFIG.totalTime / 60);
+        const totalSec = CONFIG.totalTime % 60;
+        const timeStr = totalMin > 0 ? `${totalMin}m ${totalSec}s` : `${totalSec}s`;
+        document.getElementById('quizTopicLabel').innerText = sanitize(CONFIG.topicName);
+        document.getElementById('quizMeta').innerText = `${sanitize(CONFIG.subjectName)} • ${CONFIG.difficulty} • ${CONFIG.numQuestions} Questions • ${timeStr} Total`;
+
+        // --- Timer ---
+        function startTimer() {
+            updateTimerDisplay();
+            timerInterval = setInterval(() => {
+                timeRemaining--;
+                updateTimerDisplay();
+                if (timeRemaining <= 0) {
+                    clearInterval(timerInterval);
+                    finishQuiz();
+                }
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            const min = Math.floor(timeRemaining / 60);
+            const sec = timeRemaining % 60;
+            const display = document.getElementById('timerDisplay');
+            display.innerText = `${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+            if (timeRemaining <= 30) {
+                display.classList.remove('text-yellow-400');
+                display.classList.add('text-red-400');
+            }
+        }
+        let rateLimitMessage = null;
+        let rateLimitShown = false;
+        const RATE_LIMIT_LAST_DAY_KEY = 'rtu_rate_limit_last_day';
+
+        function getIstDateString() {
+            // Align with server-side IST reset logic (UTC+5:30)
+            const now = new Date();
+            const istOffsetMinutes = 5 * 60 + 30;
+            const utcMs = now.getTime() + (now.getTimezoneOffset() * 60 * 1000);
+            const istMs = utcMs + istOffsetMinutes * 60 * 1000;
+            const istDate = new Date(istMs);
+            return istDate.toISOString().slice(0, 10);
+        }
+
+        function clearRateLimitIfNewDay() {
+            const today = getIstDateString();
+            const last = localStorage.getItem(RATE_LIMIT_LAST_DAY_KEY);
+            if (last && last !== today) {
+                rateLimitShown = false;
+                rateLimitMessage = null;
+                localStorage.removeItem(RATE_LIMIT_LAST_DAY_KEY);
+            }
+        }
+
+        function handleRateLimit(detail, isAuthed = false) {
+            if (rateLimitShown) return;
+            rateLimitShown = true;
+            localStorage.setItem(RATE_LIMIT_LAST_DAY_KEY, getIstDateString());
+
+            const defaultGuestMsg = rateLimitConfig.guest_upgrade_message;
+            const defaultAuthedMsg = rateLimitConfig.auth_limit_message;
+
+            let msg = detail || (isAuthed ? defaultAuthedMsg : defaultGuestMsg);
+            if (isAuthed && /sign in|sign up|please sign/i.test(msg)) {
+                msg = defaultAuthedMsg;
+            }
+            rateLimitMessage = msg;
+
+            // Ensure the UI reflects the rate limit state (avoid staying stuck on a loading spinner)
+            const loadingTextEl = document.getElementById('loadingText');
+            if (loadingTextEl) {
+                loadingTextEl.innerText = msg;
+            }
+            const spinner = document.querySelector('#loadingState .animate-spin');
+            if (spinner) {
+                spinner.classList.add('hidden');
+            }
+
+            const dialogOpts = {
+                title: 'Daily Limit Reached',
+                text: msg,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: isAuthed ? 'Open Settings' : 'Login / Sign Up',
+                cancelButtonText: 'Maybe later',
+                confirmButtonColor: '#3b82f6'
+            };
+
+            showDialog(dialogOpts).then((result) => {
+                sessionStorage.setItem('fromPage', 'quiz');
+                if (!result.isConfirmed) {
+                    if (timerInterval) clearInterval(timerInterval);
+                    window.location.href = 'index.html?from=quiz';
+                    return;
+                }
+
+                if (isAuthed) {
+                    window.location.href = 'index.html?from=quiz&openSettings=true';
+                } else {
+                    window.location.href = 'index.html?from=quiz&auth=true';
+                }
+            });
+        }
+
+        // --- Hybrid Question Fetching ---
+        async function loadQuestions(attempt = 1) {
+            try {
+                clearRateLimitIfNewDay();
+                await loadRateLimitConfig();
+                document.getElementById('loadingText').innerText = 'Checking question cache...';
+
+                const { data: { session } } = await supabaseClient.auth.getSession();
+                const isAuthed = !!session;
+
+                // --- PROACTIVE LIMIT CHECK ---
+                try {
+                    if (!session) {
+                        const lRes = await fetch(`${API_BASE}/guest-limits`);
+                        if (lRes.ok) {
+                            const lim = await lRes.json();
+                            if (lim.gemini_remaining === 0 && lim.groq_remaining === 0) {
+                                handleRateLimit(lim.guest_upgrade_message || rateLimitConfig.guest_upgrade_message, false);
+                                return;
+                            }
+                        }
+                    } else {
+                        const limitsRes = await fetch(`${API_BASE}/my-limits`, {
+                            headers: { 'Authorization': `Bearer ${session.access_token}` }
+                        });
+                        const prof = limitsRes.ok ? await limitsRes.json() : null;
+                        if (prof && (prof.gemini_remaining ?? 0) === 0 && (prof.groq_remaining ?? 0) === 0) {
+                            handleRateLimit(prof.auth_limit_message || rateLimitConfig.auth_limit_message, true);
+                            return;
+                        }
+                    }
+                } catch (e) { console.warn("Proactive check failed", e); }
+
+                const headers = { 'Content-Type': 'application/json' };
+                if (session) headers['Authorization'] = `Bearer ${session.access_token}`;
+
+                // Step 1: Try to get cached questions
+                let cached = [];
+                try {
+                    const cacheRes = await fetch(`${API_BASE}/quiz-questions/${CONFIG.topicId}?count=${CONFIG.numQuestions}&difficulty=${CONFIG.difficulty}`, {
+                        headers: session ? { 'Authorization': `Bearer ${session.access_token}` } : {}
+                    });
+                    if (cacheRes.status === 429) {
+                        let detail;
+                        try {
+                            const err = await cacheRes.json();
+                            detail = err?.detail || err?.message;
+                        } catch {
+                            detail = null;
+                        }
+                        rateLimitMessage = detail || rateLimitConfig.guest_upgrade_message;
+                        handleRateLimit(rateLimitMessage, isAuthed);
+                        return;
+                    }
+                    if (cacheRes.ok) {
+                        cached = await cacheRes.json();
+                        if (!Array.isArray(cached)) cached = [];
+                    }
+                } catch (e) { console.warn('Cache fetch failed, generating all fresh', e); }
+
+                // Shuffle cached
+                cached = shuffleArray(cached);
+
+                const needed = CONFIG.numQuestions - cached.length;
+
+                if (needed > 0) {
+                    document.getElementById('loadingText').innerText = `Generating ${needed} fresh questions with AI...`;
+                    // Step 2: Generate the remaining
+                    const genRes = await fetch(`${API_BASE}/generate-quiz-batch`, {
+                        method: 'POST',
+                        headers: headers,
+                        body: JSON.stringify({
+                            topic_id: CONFIG.topicId,
+                            topic_name: CONFIG.topicName,
+                            subject_name: CONFIG.subjectName,
+                            num_questions: needed,
+                            difficulty: CONFIG.difficulty
+                        })
+                    });
+                    if (genRes.status === 429) {
+                        let detail;
+                        try {
+                            const err = await genRes.json();
+                            detail = err?.detail || err?.message;
+                        } catch {
+                            detail = null;
+                        }
+                        rateLimitMessage = detail || rateLimitConfig.guest_upgrade_message;
+                        handleRateLimit(rateLimitMessage, isAuthed);
+                        return;
+                    }
+
+                    if (genRes.ok) {
+                        const generated = await genRes.json();
+
+                        // Some backends may return a success status but include a rate-limit detail
+                        if (generated?.detail && /limit|quota/i.test(String(generated.detail))) {
+                            rateLimitMessage = generated.detail;
+                            handleRateLimit(generated.detail, isAuthed);
+                            return;
+                        }
+
+                        if (generated.model_used === 'groq') {
+                            showToast('Gemini rate limit reached. Using Groq (fallback model) to generate questions.', 'info', 5000);
+                        }
+                        if (Array.isArray(generated.quiz)) {
+                            cached = [...cached, ...shuffleArray(generated.quiz)];
+                        }
+                    }
+                }
+
+                // Prioritize cached, then shuffle all
+                questions = shuffleArray(cached).slice(0, CONFIG.numQuestions);
+
+                if (questions.length === 0) {
+                    const loadingTextEl = document.getElementById('loadingText');
+                    if (loadingTextEl) {
+                        loadingTextEl.innerText = rateLimitMessage || 'Failed to load questions. Please go back and try again.';
+                    }
+                    const spinner = document.querySelector('#loadingState .animate-spin');
+                    if (spinner) spinner.classList.add('hidden');
+                    return;
+                }
+
+                // Start quiz
+                document.getElementById('loadingState').classList.add('hidden');
+                document.getElementById('questionCard').classList.remove('hidden');
+                startTimer();
+                showQuestion(0);
+
+            } catch (e) {
+                console.error('Failed to load questions:', e);
+                const message = (typeof e === 'string' ? e : (e?.message || 'Error loading questions. Is the backend running?'));
+
+                // Unlimited retry for transient failures (up to 10 attempts to prevent infinite loops)
+                if (attempt < 10) {
+                    const loadingTextEl = document.getElementById('loadingText');
+                    if (loadingTextEl) {
+                        loadingTextEl.innerText = `Retrying to load questions... (attempt ${attempt})`;
+                    }
+
+                    // Wait longer between retries (exponential backoff, max 5 seconds)
+                    const delay = Math.min(5000, 800 * Math.pow(1.5, attempt - 1));
+                    await new Promise(r => setTimeout(r, delay));
+
+                    return loadQuestions(attempt + 1);
+                }
+
+                // After 10 attempts, show error
+                if (/limit|quota|exhausted|daily limits/i.test(message)) {
+                    rateLimitMessage = message;
+                    handleRateLimit(message, isAuthed);
+                } else {
+                    const loadingTextEl = document.getElementById('loadingText');
+                    if (loadingTextEl) loadingTextEl.innerText = 'Failed to load questions after multiple attempts. Please check your connection and try again.';
+                    const spinner = document.querySelector('#loadingState .animate-spin');
+                    if (spinner) spinner.classList.add('hidden');
+                }
+            }
+        }
+
+        function shuffleArray(arr) {
+            const a = [...arr];
+            for (let i = a.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [a[i], a[j]] = [a[j], a[i]];
+            }
+            return a;
+        }
+
+        // --- Show Question ---
+        function showQuestion(index) {
+            try {
+                if (index < 0 || index >= questions.length) {
+                    console.error('showQuestion: index out of range', index, questions.length);
+                    finishQuiz();
+                    return;
+                }
+
+                currentIndex = index;
+                answered = false;
+                const q = questions[index];
+
+                if (!q || !Array.isArray(q.options) || typeof q.question !== 'string') {
+                    console.error('showQuestion: invalid question data', q);
+                    document.getElementById('loadingText').innerText = 'Invalid question data received. Please try again.';
+                    const spinner = document.querySelector('#loadingState .animate-spin');
+                    if (spinner) spinner.classList.add('hidden');
+                    return;
+                }
+
+                // Update progress
+                document.getElementById('progressLabel').innerText = `Question ${index + 1} / ${questions.length}`;
+                const pct = Math.round(((index) / questions.length) * 100);
+                document.getElementById('progressPercent').innerText = `${pct}%`;
+                document.getElementById('progressBar').style.width = `${pct}%`;
+
+                // Animate in
+                const inner = document.getElementById('questionInner');
+                inner.classList.remove('fade-in');
+                void inner.offsetWidth; // trigger reflow
+                inner.classList.add('fade-in');
+
+                document.getElementById('questionText').innerText = q.question;
+                document.getElementById('explanationBox').classList.add('hidden');
+                document.getElementById('nextBtn').classList.add('hidden');
+
+                const optContainer = document.getElementById('optionsContainer');
+                optContainer.innerHTML = q.options.map((opt, i) => `
+                <button onclick="selectAnswer(${i})" id="opt-${i}"
+                    class="w-full text-left bg-gray-800 hover:bg-gray-700 p-4 rounded-lg border border-gray-700 text-sm transition-all shadow-sm font-medium opt-stagger-${i}">
+                    <span class="font-bold text-gray-400 mr-2">${String.fromCharCode(65 + i)}.</span> ${sanitize(opt)}
+                </button>
+            `).join('');
+            } catch (err) {
+                console.error('showQuestion error:', err);
+                document.getElementById('loadingText').innerText = 'Error displaying question. Please reload.';
+                const spinner = document.querySelector('#loadingState .animate-spin');
+                if (spinner) spinner.classList.add('hidden');
+            }
+        }
+
+        // --- Answer ---
+        function selectAnswer(selectedIdx) {
+            if (answered) return;
+            answered = true;
+
+            const q = questions[currentIndex];
+            if (!q || !Array.isArray(q.options)) {
+                console.error('selectAnswer: invalid question data', q);
+                return;
+            }
+            const correctIdx = Number.isInteger(q.correct_answer_index) ? q.correct_answer_index : -1;
+
+            // Lock all buttons
+            q.options.forEach((_, i) => {
+                const btn = document.getElementById(`opt-${i}`);
+                if (!btn) return;
+                btn.disabled = true;
+                btn.classList.remove('hover:bg-gray-700');
+                btn.classList.add('cursor-not-allowed', 'opacity-80');
+            });
+
+            const selectedBtn = document.getElementById(`opt-${selectedIdx}`);
+            const correctBtn = document.getElementById(`opt-${correctIdx}`);
+
+            if (!selectedBtn) {
+                console.warn('selectAnswer: selected button not found', selectedIdx);
+            }
+            if (correctIdx < 0 || correctIdx >= q.options.length) {
+                console.warn('selectAnswer: invalid correct_answer_index', correctIdx, 'for options length', q.options.length);
+            }
+
+            selectedBtn.classList.add('answer-bounce');
+            if (selectedIdx === correctIdx && selectedBtn) {
+                score++;
+                selectedBtn.classList.replace('bg-gray-800', 'bg-green-700');
+                selectedBtn.classList.replace('border-gray-700', 'border-green-500');
+            } else {
+                if (selectedBtn) {
+                    selectedBtn.classList.replace('bg-gray-800', 'bg-red-700');
+                    selectedBtn.classList.replace('border-gray-700', 'border-red-500');
+                }
+                if (correctBtn) {
+                    correctBtn.classList.replace('bg-gray-800', 'bg-green-700');
+                    correctBtn.classList.replace('border-gray-700', 'border-green-500');
+                }
+            }
+
+            document.getElementById('scoreDisplay').innerText = score;
+
+            // Show explanation
+            if (q.explanation) {
+                document.getElementById('explanationText').innerText = q.explanation;
+                document.getElementById('explanationBox').classList.remove('hidden');
+            }
+
+            // Show next button
+            const nextBtn = document.getElementById('nextBtn');
+            nextBtn.classList.remove('hidden');
+            if (currentIndex >= questions.length - 1) {
+                nextBtn.innerText = 'View Results 🏆';
+            } else {
+                nextBtn.innerText = 'Next Question →';
+            }
+        }
+
+        function nextQuestion() {
+            if (currentIndex >= questions.length - 1) {
+                finishQuiz();
+            } else {
+                showQuestion(currentIndex + 1);
+            }
+        }
+
+        // --- Finish ---
+        async function finishQuiz() {
+            if (timerInterval) clearInterval(timerInterval);
+
+            document.getElementById('questionCard').classList.add('hidden');
+            document.getElementById('resultsScreen').classList.remove('hidden');
+            document.getElementById('resultsScreen').classList.add('flex');
+
+            const total = questions.length;
+            const pct = Math.round((score / total) * 100);
+
+            document.getElementById('resultScore').innerText = `${score} / ${total} correct (${pct}%)`;
+
+            // Update progress to 100%
+            document.getElementById('progressLabel').innerText = `Completed`;
+            document.getElementById('progressPercent').innerText = `100%`;
+            document.getElementById('progressBar').style.width = `100%`;
+
+            let grade = '🟢 Excellent!';
+            if (pct < 40) grade = '🔴 Needs Improvement';
+            else if (pct < 70) grade = '🟡 Good Effort!';
+
+            document.getElementById('resultBreakdown').innerHTML = `
+            <p class="text-gray-400">Topic: <span class="text-white font-semibold">${CONFIG.topicName}</span></p>
+            <p class="text-gray-400">Difficulty: <span class="text-white font-semibold">${CONFIG.difficulty}</span></p>
+            <p class="text-gray-400">Questions: <span class="text-white font-semibold">${total}</span></p>
+            <p class="text-gray-400">Score: <span class="text-white font-semibold">${score} / ${total}</span></p>
+            <p class="text-gray-400 mt-2 text-lg">${grade}</p>
+        `;
+
+            // Track Score in Backend
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (session) {
+                try {
+                    await fetch(`${API_BASE}/submit-quiz-score`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+                        body: JSON.stringify({ topic_id: CONFIG.topicId, score: score, total_questions: total })
+                    });
+                } catch (e) { console.error('Stats track err:', e); }
+            }
+        }
+
+        function quitQuiz() {
+            showDialog({
+                title: 'Quit quiz?',
+                text: 'Your progress will be lost if you leave.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, quit',
+                cancelButtonText: 'Keep going',
+                confirmButtonColor: '#dc2626'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    sessionStorage.setItem('fromPage', 'quiz');
+                    if (timerInterval) clearInterval(timerInterval);
+                    window.location.href = 'index.html?from=quiz';
+                }
+            });
+        }
+
+        // --- Boot ---
+        loadQuestions();
+    </script>
+</body>
+
+</html>
