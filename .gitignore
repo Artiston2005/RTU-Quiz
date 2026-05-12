@@ -1,6 +1,16 @@
 # Environment
 .env
 .env.*
+*.local
+
+# Secrets and Keys
+*.key
+*.pem
+*.cert
+*.crt
+secrets.json
+client_secret.json
+credentials.json
 
 # Python
 __pycache__/
